@@ -397,7 +397,6 @@
     <!--侧边菜单-->
     <div class="sidebar">
         <div class="sidebar-title">企业客户服务中台</div>
-        <div class="menu-item" :class="{active: currentPage===0}" @click="currentPage=0">数据看板</div>
         <div class="menu-item" :class="{active: currentPage===1}" @click="currentPage=1">支付信息列表</div>
         <div class="menu-item" :class="{active: currentPage===2}" @click="currentPage=2">理赔信息列表</div>
         <div class="menu-item" :class="{active: currentPage===3}" @click="currentPage=3">员工信息查询</div>
@@ -415,8 +414,8 @@
     <!--主内容区-->
     <div class="toast" v-if="toast.show">{{ toast.msg }}</div>
     <div class="main">
-        <!--页面0：数据看板-->
-        <div v-if="currentPage===0">
+        <!--页面0：数据看板（已隐藏，代码保留，需要时把 v-if 改回 currentPage===0 并在菜单恢复入口）-->
+        <div v-if="false">
             <div class="page-card">
                 <h2>数据看板</h2>
                 <div class="board-tip">
@@ -985,7 +984,7 @@ new Vue({
         };
 
         return {
-            currentPage: 0,
+            currentPage: 1,   /* 默认进入支付信息列表（数据看板已隐藏） */
             pageSize: 20,
             meta: D.meta || {},
             dashboard: DB,
