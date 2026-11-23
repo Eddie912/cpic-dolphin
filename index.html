@@ -842,7 +842,7 @@
 
         .stack-detail-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
         .stack-detail-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
-        .stack-detail-row-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+        .stack-detail-row-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 5px; }
 
         .stack-detail {
             display: flex;
@@ -2405,14 +2405,14 @@
                                     </div>
                                     <span class="sd-pct">{{ opData.inpatientPercent }}%</span>
                                 </div>
-                                <div class="stack-detail c5">
+                                <div class="stack-detail c5" v-if="opData.fatalIllnessPercent > 0">
                                     <div class="sd-info">
                                         <span class="sd-name">身故重疾</span>
                                         <span class="sd-amount">¥{{ opData.fatalIllnessAmount }}</span>
                                     </div>
                                     <span class="sd-pct">{{ opData.fatalIllnessPercent }}%</span>
                                 </div>
-                                <div class="stack-detail c2">
+                                <div class="stack-detail c2" v-if="opData.maternityPercent > 0">
                                     <div class="sd-info">
                                         <span class="sd-name">生育</span>
                                         <span class="sd-amount">¥{{ opData.maternityAmount }}</span>
@@ -2927,7 +2927,7 @@
                 const D = window.CPIC_DATA;
                 if (!D || !D.dashboard) return;
                 const db = D.dashboard, R = D.report || {};
-                const m = c => Number(c || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                const m = c => (Number(c || 0) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 const BUDGET = 200000000;   // 200 万元（单位：分）
 
                 // --- 资金池 ---
@@ -2965,9 +2965,9 @@
                 // 品类 TOP5：按渠道金额重新配比（Top5 约占 68%）
                 const rescale = (list, total, share) => {
                     const base = list.reduce((s, i) => s + i.amount, 0);
-                    return list.map((i, idx) => ({
+                    return list.map(i => ({
                         name: i.name,
-                        amount: Math.round(total * share * (i.amount / base))
+                        amount: Math.round(total * share * (i.amount / base) / 100)   // 转为元
                     }));
                 };
                 op.offlineRank = rescale(op.offlineRank, db.offlinePay, 0.68);
