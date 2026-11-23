@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>理赔分析报告 · 企业客户服务中台</title>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.js"></script>
+<script src="assets/data.js"></script>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
+        background: #eef1f5; color: #26292e; font-size: 13px; line-height: 1.78;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    /* ============ 工具栏 ============ */
+    .toolbar {
+        position: sticky; top: 0; z-index: 50; height: 56px;
+        background: #0B4CA1; color: #fff; display: flex; align-items: center;
+        padding: 0 24px; gap: 10px; box-shadow: 0 2px 12px rgba(11,76,161,.24);
+    }
+    .tb-title { font-size: 14px; font-weight: 600; margin-right: auto; letter-spacing: .5px; }
+    .tb-title span { font-weight: 400; opacity: .75; font-size: 12px; margin-left: 10px; }
+    .tb-btn {
+        height: 32px; padding: 0 16px; border-radius: 4px; border: 1px solid rgba(255,255,255,.45);
+        background: transparent; color: #fff; font-size: 13px; cursor: pointer;
+        font-family: inherit; transition: .16s;
+    }
+    .tb-btn:hover { background: rgba(255,255,255,.14); }
+    .tb-btn.primary { background: #fff; color: #0B4CA1; border-color: #fff; font-weight: 600; }
+    .tb-btn.primary:hover { background: #eaf2ff; }
+
+    /* ============ 纸张 ============ */
+    .paper {
+        width: 940px; max-width: calc(100% - 40px); margin: 26px auto 60px;
+        background: #fff; padding: 52px 60px 64px;
+        box-shadow: 0 4px 28px rgba(20,40,80,.1);
+    }
+
+    /* ============ 报头 ============ */
+    .rpt-head { border-bottom: 2.5px solid #0B4CA1; padding-bottom: 20px; margin-bottom: 8px; }
+    .rpt-org { font-size: 14px; color: #4b5563; letter-spacing: 2px; }
+    .rpt-title { font-size: 30px; font-weight: 700; color: #0B4CA1; letter-spacing: 3px; margin: 6px 0 4px; }
+    .rpt-sub { font-size: 12px; color: #8a919c; letter-spacing: 1px; }
+    .rpt-meta {
+        display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 18px;
+        border: 1px solid #dbe2ea; border-radius: 4px; overflow: hidden;
+    }
+    .rpt-meta .m { padding: 10px 14px; border-right: 1px solid #eef1f5; background: #fafbfd; }
+    .rpt-meta .m:last-child { border-right: none; }
+    .rpt-meta .mk { font-size: 11px; color: #8a919c; }
+    .rpt-meta .mv { font-size: 13px; color: #1f2733; font-weight: 600; margin-top: 1px; }
+
+    /* ============ 章节 ============ */
+    .chapter { margin-top: 34px; page-break-inside: auto; }
+    .ch-title {
+        font-size: 17px; font-weight: 700; color: #0B4CA1; padding-left: 12px;
+        border-left: 4px solid #0B4CA1; line-height: 1.3; margin-bottom: 14px;
+    }
+    .ch-sub {
+        font-size: 14px; font-weight: 600; color: #1f2733; margin: 22px 0 9px;
+        padding-bottom: 5px; border-bottom: 1px solid #e8edf4; page-break-after: avoid;
+    }
+    p.txt { text-indent: 2em; margin-bottom: 10px; color: #3a4150; }
+    p.txt em { font-style: normal; color: #0B4CA1; font-weight: 600; }
+
+    /* ============ 表格 ============ */
+    table { width: 100%; border-collapse: collapse; font-size: 12px; page-break-inside: avoid; }
+    th {
+        background: #eef4fc; color: #1c4a86; font-weight: 600; text-align: center;
+        padding: 8px 6px; border: 1px solid #d8e2ef; white-space: nowrap;
+    }
+    td { padding: 7px 8px; border: 1px solid #e4eaf2; vertical-align: middle; }
+    tbody tr:nth-child(even) { background: #fafcfe; }
+    td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+    td.c { text-align: center; }
+    td.name { font-weight: 600; color: #1f2733; }
+    .sum-row td { background: #f2f7fd !important; font-weight: 600; color: #0B4CA1; }
+    .note { font-size: 11.5px; color: #8a919c; margin-top: 7px; line-height: 1.7; }
+
+    /* ============ 指标卡 ============ */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 8px; }
+    .kpi {
+        border: 1px solid #e2e9f2; border-radius: 5px; padding: 12px 14px; background: #fbfcfe;
+        border-top: 3px solid #0B4CA1;
+    }
+    .kpi .k { font-size: 11.5px; color: #7d8694; }
+    .kpi .v { font-size: 21px; font-weight: 700; color: #0B4CA1; line-height: 1.3; font-variant-numeric: tabular-nums; }
+    .kpi .v small { font-size: 12px; font-weight: 500; color: #5b6572; margin-left: 2px; }
+    .kpi .s { font-size: 11px; color: #9aa2ad; }
+
+    /* ============ 洞察块 ============ */
+    .insight {
+        background: #f4f8fe; border-left: 3px solid #4a86d8; padding: 11px 15px;
+        font-size: 12.5px; color: #33445c; margin: 10px 0 14px; line-height: 1.8;
+    }
+    .insight b { color: #0B4CA1; }
+
+    /* ============ 标签 ============ */
+    .tag { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 11px; line-height: 18px; }
+    .t-red { background: #fdeeee; color: #c0392b; }
+    .t-org { background: #fef4e6; color: #c47d0b; }
+    .t-yel { background: #fdf9e3; color: #9a7d09; }
+    .t-grn { background: #ebf7ef; color: #1d8348; }
+    .t-gray { background: #f0f2f5; color: #6c7684; }
+
+    /* ============ 页脚 ============ */
+    .rpt-foot {
+        margin-top: 46px; padding-top: 14px; border-top: 1px solid #e4eaf2;
+        display: flex; justify-content: space-between; font-size: 11px; color: #9aa2ad;
+    }
+
+    /* ============ 打印 ============ */
+    @page { size: A4 portrait; margin: 13mm 12mm; }
+    @media print {
+        body { background: #fff; font-size: 10.5pt; }
+        .toolbar { display: none !important; }
+        .paper { width: auto; max-width: none; margin: 0; padding: 0; box-shadow: none; }
+        .chapter { page-break-inside: auto; }
+        .ch-title { page-break-after: avoid; }
+        table { font-size: 9pt; }
+        th { background: #eef4fc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .kpi, .insight, .tag, .sum-row td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+    @media (max-width: 900px) {
+        .paper { padding: 28px 20px; }
+        .rpt-title { font-size: 22px; }
+        .kpi-grid, .rpt-meta { grid-template-columns: repeat(2, 1fr); }
+    }
+</style>
+</head>
+<body>
+<div id="app">
+    <div class="toolbar">
+        <div class="tb-title">理赔分析报告<span>{{ meta.tenant }} · 统计期间 {{ report.period.start }} 至 {{ report.period.end }}</span></div>
+        <button class="tb-btn" @click="goBack">返回后管端</button>
+        <button class="tb-btn" @click="downloadPdf">下载原始 PDF</button>
+        <button class="tb-btn primary" @click="printPdf">导出 PDF / 打印</button>
+    </div>
+
+    <div class="paper">
+        <!-- 报头 -->
+        <div class="rpt-head">
+            <div class="rpt-org">{{ meta.tenant }}</div>
+            <div class="rpt-title">理赔分析报告</div>
+            <div class="rpt-sub">CLAIMS ANALYSIS REPORT · {{ meta.vendor }}</div>
+            <div class="rpt-meta">
+                <div class="m"><div class="mk">统计期间</div><div class="mv">{{ report.period.start }} — {{ report.period.end }}</div></div>
+                <div class="m"><div class="mk">统计口径</div><div class="mv">已完成案件（以结案日期为准）</div></div>
+                <div class="m"><div class="mk">承保公司</div><div class="mv">{{ meta.policy.insurer }}</div></div>
+                <div class="m"><div class="mk">团单号</div><div class="mv">{{ meta.policy.policyNo }}</div></div>
+                <div class="m"><div class="mk">保单有效期</div><div class="mv">{{ meta.policy.start }} — {{ meta.policy.end }}</div></div>
+                <div class="m"><div class="mk">承保人数</div><div class="mv">{{ report.policy.insured }} 人</div></div>
+                <div class="m"><div class="mk">年度总保费</div><div class="mv">¥{{ money(report.policy.premium) }}</div></div>
+                <div class="m"><div class="mk">出具单位</div><div class="mv">{{ meta.vendor }}</div></div>
+            </div>
+        </div>
+
+        <!-- 一、全局概览 -->
+        <div class="chapter">
+            <div class="ch-title">一、全局概览</div>
+            <p class="txt">
+                统计期间内，共结案 <em>{{ report.overview.totalCases }}</em> 件，赔付 <em>{{ report.overview.paidCases }}</em> 件，
+                获赔率 <em>{{ report.overview.payRate }}%</em>，运行总体健康。账单金额合计 <em>{{ wan(report.overview.billTotal) }}</em> 万元，
+                实际赔付 <em>{{ wan(report.overview.payTotal) }}</em> 万元，案均赔付 <em>{{ money(report.overview.avgPay) }}</em> 元，
+                最高单案 <em>{{ money(report.overview.maxPay) }}</em> 元，最低单案 <em>{{ money(report.overview.minPay) }}</em> 元。
+                共涉及发票 <em>{{ report.overview.invoices }}</em> 张，补材案件 <em>{{ report.overview.supplement }}</em> 件，本统计期内无调查案件。
+            </p>
+
+            <div class="kpi-grid">
+                <div class="kpi">
+                    <div class="k">总案件数</div>
+                    <div class="v">{{ report.overview.totalCases }}<small>件</small></div>
+                    <div class="s">其中赔付 {{ report.overview.paidCases }} 件</div>
+                </div>
+                <div class="kpi">
+                    <div class="k">赔付金额合计</div>
+                    <div class="v">{{ wan(report.overview.payTotal) }}<small>万元</small></div>
+                    <div class="s">账单合计 {{ wan(report.overview.billTotal) }} 万元</div>
+                </div>
+                <div class="kpi">
+                    <div class="k">案均赔付</div>
+                    <div class="v">{{ money(report.overview.avgPay) }}<small>元</small></div>
+                    <div class="s">最高 {{ money(report.overview.maxPay) }} 元</div>
+                </div>
+                <div class="kpi">
+                    <div class="k">获赔率</div>
+                    <div class="v">{{ report.overview.payRate }}<small>%</small></div>
+                    <div class="s">撤案 {{ report.overview.revokedCases }} 件</div>
+                </div>
+            </div>
+
+            <div class="ch-sub">1.1 核心指标总表</div>
+            <table>
+                <colgroup><col style="width:26%"><col style="width:24%"><col style="width:26%"><col style="width:24%"></colgroup>
+                <thead><tr><th>指标</th><th class="n">数值</th><th>指标</th><th class="n">数值</th></tr></thead>
+                <tbody>
+                    <tr><td>总案件数</td><td class="n">{{ report.overview.totalCases }} 件</td>
+                        <td>赔付案件数</td><td class="n">{{ report.overview.paidCases }} 件</td></tr>
+                    <tr><td>非赔付案件数</td><td class="n">{{ report.overview.revokedCases }} 件</td>
+                        <td>获赔率</td><td class="n">{{ report.overview.payRate }}%</td></tr>
+                    <tr><td>账单金额合计</td><td class="n">¥{{ money(report.overview.billTotal) }}</td>
+                        <td>赔付金额合计</td><td class="n">¥{{ money(report.overview.payTotal) }}</td></tr>
+                    <tr><td>案均赔付金额</td><td class="n">¥{{ money(report.overview.avgPay) }}</td>
+                        <td>最高单案赔付</td><td class="n">¥{{ money(report.overview.maxPay) }}</td></tr>
+                    <tr><td>最低单案赔付</td><td class="n">¥{{ money(report.overview.minPay) }}</td>
+                        <td>总发票张数</td><td class="n">{{ report.overview.invoices }} 张</td></tr>
+                    <tr><td>补材案件数</td><td class="n">{{ report.overview.supplement }} 件</td>
+                        <td>涉及调查案件</td><td class="n">{{ report.overview.investigate }} 件</td></tr>
+                </tbody>
+            </table>
+
+            <div class="ch-sub">1.2 审核结论分布</div>
+            <p class="txt" v-html="conclusionText"></p>
+            <table>
+                <thead><tr><th style="width:34%">审核结论</th><th class="n">案件数</th><th class="n">占比</th><th class="n">赔付金额</th></tr></thead>
+                <tbody>
+                    <tr v-for="(r, i) in report.conclusionRows" :key="i">
+                        <td class="name">{{ r.name }}</td>
+                        <td class="n">{{ r.count }}</td>
+                        <td class="n">{{ r.percent }}%</td>
+                        <td class="n">{{ r.amount ? '¥' + money(r.amount) : '—' }}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="ch-sub">1.3 赔付金额区间分布</div>
+            <p class="txt" v-html="rangeText"></p>
+            <table>
+                <thead><tr><th style="width:34%">金额区间</th><th class="n">案件数</th><th class="n">合计赔付金额</th><th class="n">金额占比</th></tr></thead>
+                <tbody>
+                    <tr v-for="(r, i) in report.rangeRows" :key="i">
+                        <td class="name">{{ r.range }}</td>
+                        <td class="n">{{ r.count }}</td>
+                        <td class="n">{{ r.amount ? '¥' + money(r.amount) : '—' }}</td>
+                        <td class="n">{{ r.amount ? r.percent + '%' : '—' }}</td>
+                    </tr>
+                    <tr class="sum-row">
+                        <td>合计</td><td class="n">{{ report.overview.totalCases }}</td>
+                        <td class="n">¥{{ money(report.overview.payTotal) }}</td><td class="n">100%</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 二、赔付多维分析 -->
+        <div class="chapter">
+            <div class="ch-title">二、赔付多维分析</div>
+
+            <div class="ch-sub">2.1 赔付进度总表</div>
+            <p class="txt" v-html="progressText"></p>
+            <table>
+                <colgroup><col style="width:38%"><col style="width:32%"><col style="width:30%"></colgroup>
+                <thead><tr><th>分析维度</th><th class="n">数值</th><th class="n">说明</th></tr></thead>
+                <tbody>
+                    <tr><td>年度总保费</td><td class="n">¥{{ money(report.progress.premium) }}</td><td class="c">—</td></tr>
+                    <tr><td>累计赔付金额</td><td class="n">¥{{ money(report.progress.cumPay) }}</td><td class="c">本期赔付合计</td></tr>
+                    <tr><td>金额赔付进度</td><td class="n">{{ report.progress.payProgress }}%</td><td class="c">累赔 / 总保费</td></tr>
+                    <tr><td>承保人数</td><td class="n">{{ report.progress.insured }} 人</td><td class="c">—</td></tr>
+                    <tr><td>已出险人数</td><td class="n">{{ report.progress.accidentPersons }} 人</td><td class="c">去重后人数</td></tr>
+                    <tr><td>人员出险进度</td><td class="n">{{ report.progress.personProgress }}%</td><td class="c">出险人数 / 承保人数</td></tr>
+                </tbody>
+            </table>
+
+            <div class="ch-sub">2.2 分险种赔付分布</div>
+            <p class="txt" v-html="insText"></p>
+            <table>
+                <thead><tr>
+                    <th style="width:30%">险种名称</th><th class="n">案件数</th><th class="n">出险人数</th>
+                    <th class="n">赔付金额</th><th class="n">案均赔付</th><th class="n">赔付占比</th><th class="n">赔付率</th>
+                </tr></thead>
+                <tbody>
+                    <tr v-for="(r, i) in report.insRows" :key="i">
+                        <td class="name">{{ r.name }}</td><td class="n">{{ r.cases }}</td><td class="n">{{ r.persons }}</td>
+                        <td class="n">¥{{ money(r.amount) }}</td><td class="n">¥{{ money(r.avg) }}</td>
+                        <td class="n">{{ r.percent }}%</td><td class="n">{{ r.lossRate }}%</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="note">注：附加住院补充团体医疗保险与附加团体医疗保险在同一住院案件上同时赔付，故两险种案件数一致。</div>
+
+            <div class="ch-sub">2.3 分索赔性质赔付分布</div>
+            <p class="txt" v-html="natureText"></p>
+            <table>
+                <thead><tr>
+                    <th style="width:26%">索赔性质</th><th class="n">案件数</th><th class="n">出险人数</th>
+                    <th class="n">赔付金额</th><th class="n">案均赔付</th><th class="n">赔付占比</th>
+                </tr></thead>
+                <tbody>
+                    <tr v-for="(r, i) in report.natureRows" :key="i">
+                        <td class="name">{{ r.name }}</td><td class="n">{{ r.cases }}</td><td class="n">{{ r.persons }}</td>
+                        <td class="n">¥{{ money(r.amount) }}</td><td class="n">¥{{ money(r.avg) }}</td><td class="n">{{ r.percent }}%</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="ch-sub">2.4 分年龄段赔付分布</div>
+            <p class="txt" v-html="ageText"></p>
+            <table>
+                <thead><tr>
+                    <th style="width:20%">年龄段</th><th class="n">案件数</th><th class="n">出险人数</th>
+                    <th class="n">赔付金额</th><th class="n">案均赔付</th><th class="n">人均赔付</th>
+                </tr></thead>
+                <tbody>
+                    <tr v-for="(r, i) in report.ageRows" :key="i">
+                        <td class="name">{{ r.name }}</td><td class="n">{{ r.cases }}</td><td class="n">{{ r.persons }}</td>
+                        <td class="n">¥{{ money(r.amount) }}</td><td class="n">¥{{ money(r.avg) }}</td><td class="n">¥{{ money(r.avgPerson) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="ch-sub">2.5 分医保类型赔付分布</div>
+            <p class="txt" v-html="medText"></p>
+            <table>
+                <thead><tr>
+                    <th style="width:26%">医保类型</th><th class="n">案件数</th><th class="n">出险人数</th>
+                    <th class="n">赔付金额</th><th class="n">案均赔付</th><th class="n">赔付占比</th>
+                </tr></thead>
+                <tbody>
+                    <tr v-for="(r, i) in report.medRows" :key="i">
+                        <td class="name">{{ r.name }}</td><td class="n">{{ r.cases }}</td><td class="n">{{ r.persons }}</td>
+                        <td class="n">¥{{ money(r.amount) }}</td><td class="n">¥{{ money(r.avg) }}</td><td class="n">{{ r.percent }}%</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="ch-sub">2.6 分医院等级赔付分布</div>
+            <p class="txt" v-html="levelText"></p>
+            <table>
+                <thead><tr>
+                    <th style="width:22%">医院等级</th><th class="c" style="width:14%">医院评级</th><th class="n">案件数</th>
+                    <th class="n">赔付金额</th><th class="n">案均赔付</th><th class="n">涉及医院数</th>
+                </tr></thead>
+                <tbody>
+                    <tr v-for="(r, i) in report.levelRows" :key="i">
+                        <td class="name">{{ r.level }}</td><td class="c">{{ r.grade }}</td><td class="n">{{ r.cases }}</td>
+                        <td class="n">¥{{ money(r.amount) }}</td><td class="n">¥{{ money(r.avg) }}</td><td class="n">{{ r.hospitals }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="note">注：「未定级/其他」主要为门急诊药房及暂未收录于等级库的医疗机构，不影响赔付合规性判断。</div>
+
+            <div class="ch-sub">2.7 主要诊断 TOP（按案件量排序）</div>
+            <p class="txt" v-html="diagText"></p>
+            <table>
+                <thead><tr>
+                    <th class="c" style="width:8%">排名</th><th style="width:26%">疾病名称</th><th class="n">案件数</th>
+                    <th class="n">出险人数</th><th class="n">赔付金额</th><th class="n">案均赔付</th><th class="n">金额占比</th>
+                </tr></thead>
+                <tbody>
+                    <tr v-for="(r, i) in report.diagRows" :key="i">
+                        <td class="c">{{ r.rank }}</td><td class="name">{{ r.name }}</td><td class="n">{{ r.cases }}</td>
+                        <td class="n">{{ r.persons }}</td><td class="n">¥{{ money(r.amount) }}</td>
+                        <td class="n">¥{{ money(r.avg) }}</td><td class="n">{{ r.percent }}%</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 三、补材分析 -->
+        <div class="chapter">
+            <div class="ch-title">三、补材分析</div>
+            <p class="txt">
+                补材（补充材料）是理赔流程中最常见的延误原因，补材率越低说明客户提交材料的规范性越高；
+                补材无效率越低说明补材后材料质量越好。
+            </p>
+
+            <div class="ch-sub">3.1 补材总览</div>
+            <table>
+                <colgroup><col style="width:26%"><col style="width:24%"><col style="width:26%"><col style="width:24%"></colgroup>
+                <thead><tr><th>指标</th><th class="n">数值</th><th>指标</th><th class="n">数值</th></tr></thead>
+                <tbody>
+                    <tr><td>案件总数</td><td class="n">{{ report.supplement.totalCases }} 件</td>
+                        <td>补材案件数</td><td class="n">{{ report.supplement.cases }} 件</td></tr>
+                    <tr><td>补材率</td><td class="n">{{ report.supplement.rate }}%</td>
+                        <td>补材后赔付数</td><td class="n">{{ report.supplement.paidAfter }} 件</td></tr>
+                    <tr><td>补材后未赔付数</td><td class="n">{{ report.supplement.unpaidAfter }} 件</td>
+                        <td>补材无效率</td><td class="n">{{ report.supplement.invalidRate }}%</td></tr>
+                </tbody>
+            </table>
+            <div class="note">
+                注：补材无效率 {{ report.supplement.invalidRate }}%，说明客户在补材后材料质量整体可控，
+                仅 {{ report.supplement.unpaidAfter }} 件因材料仍不符合要求最终撤案。
+            </div>
+
+            <div class="ch-sub">3.2 补材原因分类及宣导建议</div>
+            <table>
+                <thead><tr>
+                    <th style="width:26%">问题类型</th><th class="n" style="width:10%">件数</th>
+                    <th style="width:34%">典型原因说明</th><th style="width:30%">宣导建议</th>
+                </tr></thead>
+                <tbody>
+                    <tr v-for="(r, i) in report.supplement.reasons" :key="i">
+                        <td class="name">{{ r.type }}</td><td class="n">{{ r.count }}</td>
+                        <td>{{ reasonDesc[r.type] || r.type }}</td>
+                        <td>{{ r.advice }}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="ch-sub">3.3 补材逐案明细</div>
+            <table>
+                <thead><tr>
+                    <th style="width:14%">被保险人</th><th style="width:24%">案件号</th>
+                    <th class="c" style="width:16%">审核结论</th><th>补材原因摘要</th>
+                </tr></thead>
+                <tbody>
+                    <tr v-for="(r, i) in report.supplement.details" :key="i">
+                        <td class="name">{{ r.name }}</td><td>{{ r.caseNo }}</td>
+                        <td class="c"><span class="tag" :class="r.conclusion === '正常赔付' ? 't-grn' : 't-gray'">{{ r.conclusion }}</span></td>
+                        <td>{{ r.reason }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 四、风控信息 -->
+        <div class="chapter">
+            <div class="ch-title">四、风控信息</div>
+            <p class="txt">
+                本章汇总系统自动规则引擎命中结果及影像核查结论，供贵司参考复核。命中信号仅代表需进一步关注，
+                不代表欺诈认定，最终处置建议以人工审核为准。
+            </p>
+
+            <div class="ch-sub">4.1 规则风控命中</div>
+            <p class="txt">
+                本期共 <em>{{ report.risk.rows.length }}</em> 件案件命中系统风控规则，命中率
+                <em>{{ (report.risk.rows.length / report.overview.totalCases * 100).toFixed(1) }}%</em>。
+            </p>
+            <table>
+                <thead><tr>
+                    <th style="width:12%">被保险人</th><th style="width:22%">案件号</th>
+                    <th class="c" style="width:12%">审核结论</th><th class="n" style="width:14%">赔付金额</th>
+                    <th>命中风控规则</th>
+                </tr></thead>
+                <tbody>
+                    <tr v-for="(r, i) in report.risk.rows" :key="i">
+                        <td class="name">{{ r.name }}</td><td>{{ r.caseNo }}</td>
+                        <td class="c"><span class="tag" :class="r.conclusion === '正常赔付' ? 't-grn' : 't-gray'">{{ r.conclusion }}</span></td>
+                        <td class="n">{{ r.amount ? '¥' + money(r.amount) : '—' }}</td>
+                        <td>{{ r.rule }}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="ch-sub">4.2 个人累计赔付 Top5</div>
+            <p class="txt">以下为统计期内个人累计赔付金额前 5 名，供贵司参考关注。</p>
+            <table>
+                <thead><tr>
+                    <th class="c" style="width:7%">排名</th><th style="width:12%">被保险人</th><th class="c">性别</th>
+                    <th class="n">年龄</th><th class="n">出险次数</th><th class="n">累计赔付金额</th>
+                    <th class="c">索赔性质</th><th class="c">命中风控信号</th>
+                </tr></thead>
+                <tbody>
+                    <tr v-for="(r, i) in report.risk.top5" :key="i">
+                        <td class="c">{{ r.rank }}</td><td class="name">{{ r.name }}</td><td class="c">{{ r.gender }}</td>
+                        <td class="n">{{ r.age }}</td><td class="n">{{ r.times }}</td>
+                        <td class="n">¥{{ money(r.amount) }}</td><td class="c">{{ r.nature }}</td>
+                        <td class="c"><span class="tag t-grn">{{ r.signal }}</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="note">注：Top5 均为合理赔付区间内的案件，未见明显异常聚集。</div>
+
+            <div class="ch-sub">4.3 影像风控信号（红冲发票 &amp; 影像篡改）</div>
+            <p class="txt">{{ report.risk.imageRisk }}</p>
+
+            <div class="ch-sub">4.4 不合理用药（以药代医分析）</div>
+            <p class="txt" v-html="pharmacyText"></p>
+            <table>
+                <thead><tr>
+                    <th style="width:42%">就诊机构</th><th class="n">案件数</th>
+                    <th class="n">合计赔付</th><th style="width:20%">主要诊断</th><th class="c" style="width:12%">是否异常</th>
+                </tr></thead>
+                <tbody>
+                    <tr v-for="(r, i) in report.risk.pharmacy.rows" :key="i">
+                        <td class="name">{{ r.hospital }}</td><td class="n">{{ r.cases }}</td>
+                        <td class="n">¥{{ money(r.amount) }}</td><td>{{ r.diag }}</td>
+                        <td class="c"><span class="tag" :class="r.abnormal === '无' ? 't-grn' : 't-org'">{{ r.abnormal }}</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 五、多次出险 -->
+        <div class="chapter">
+            <div class="ch-title">五、多次出险人员分析</div>
+            <p class="txt" v-html="multiText"></p>
+            <table>
+                <thead><tr>
+                    <th style="width:11%">被保险人</th><th class="n">出险次数</th><th class="n">赔付次数</th>
+                    <th class="n">未赔次数</th><th class="n">累计赔付</th><th class="n">案均赔付</th>
+                    <th class="n">就诊医院数</th><th class="c">命中风控</th><th class="c">首次报案</th><th class="c">最近报案</th>
+                </tr></thead>
+                <tbody>
+                    <tr v-for="(r, i) in report.multi.rows" :key="i">
+                        <td class="name">{{ r.nameMask }}</td><td class="n">{{ r.times }}</td><td class="n">{{ r.paidTimes }}</td>
+                        <td class="n">{{ r.unpaidTimes }}</td><td class="n">¥{{ money(r.amount) }}</td>
+                        <td class="n">¥{{ money(r.avg) }}</td><td class="n">{{ r.hospitals }}</td>
+                        <td class="c"><span class="tag" :class="r.risk ? 't-red' : 't-gray'">{{ r.risk ? '是' : '否' }}</span></td>
+                        <td class="c">{{ r.first }}</td><td class="c">{{ r.last }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 六、非赔付 -->
+        <div class="chapter">
+            <div class="ch-title">六、非赔付案件明细</div>
+            <p class="txt">
+                本期共 <em>{{ report.nonPaid.length }}</em> 件非赔付案件，均为撤销报案，主要原因如下：
+            </p>
+            <table>
+                <thead><tr>
+                    <th style="width:11%">被保险人</th><th style="width:20%">案件号</th>
+                    <th class="c" style="width:12%">审核结论</th><th class="n" style="width:13%">账单金额</th><th>原因说明</th>
+                </tr></thead>
+                <tbody>
+                    <tr v-for="(r, i) in report.nonPaid" :key="i">
+                        <td class="name">{{ r.name }}</td><td>{{ r.caseNo }}</td>
+                        <td class="c"><span class="tag t-gray">{{ r.conclusion }}</span></td>
+                        <td class="n">¥{{ money(r.bill) }}</td><td>{{ r.reason }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 七、风险总结 -->
+        <div class="chapter">
+            <div class="ch-title">七、风险总结与建议</div>
+            <p class="txt">
+                基于以上分析，本期 {{ meta.tenant }} 理赔运行整体平稳，赔付率处于正常水平。
+                综合各章分析，提出以下分类建议：
+            </p>
+            <table>
+                <thead><tr>
+                    <th style="width:15%">风险类型</th><th style="width:38%">关注事项</th>
+                    <th class="c" style="width:10%">严重程度</th><th>建议措施</th>
+                </tr></thead>
+                <tbody>
+                    <tr v-for="(s, i) in suggestions" :key="i">
+                        <td class="name">{{ s.type }}</td>
+                        <td>{{ s.issue }}</td>
+                        <td class="c"><span class="tag" :class="s.cls">{{ s.level }}</span></td>
+                        <td>{{ s.action }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="rpt-foot">
+            <span>{{ meta.tenant }} · 理赔分析报告 · 统计期间 {{ report.period.start }} 至 {{ report.period.end }}</span>
+            <span>本报告数据由 {{ meta.vendor }} 承保运营系统出具，仅供投保单位内部管理参考</span>
+        </div>
+    </div>
+</div>
+
+<script>
+const D = window.CPIC_DATA || {};
+const R = D.report || {};
+const M = D.meta || {};
+
+new Vue({
+    el: "#app",
+    data() {
+        return {
+            meta: M,
+            report: R,
+            reasonDesc: {
+                "发票影像缺失/不完整": "发票未完整上传（如仅上传第 2 页）、缺少有效发票影像",
+                "发票为翻拍件": "提交翻拍发票不作为报销凭据",
+                "缺少病历/就诊材料": "缺少就诊日期对应病历",
+                "申请书签名与姓名不一致": "签名与申请人姓名不符",
+                "缺少银行卡信息": "未上传领款银行卡"
+            }
+        };
+    },
+    computed: {
+        conclusionText() {
+            const rows = R.conclusionRows || [];
+            const main = rows[0] || { name: "", count: 0, percent: 0 };
+            const rest = rows.slice(1).map(r => `${r.name} ${r.count} 件（占比 ${r.percent}%）`).join("，");
+            return `本期已决案件中，${main.name} ${main.count} 件（占比 ${main.percent}%）` +
+                (rest ? `，${rest}` : "") +
+                `。非赔付案件 ${R.overview.revokedCases} 件，撤案原因主要为保障期间外就诊、就诊机构不符合约定及发票姓名不符等。`;
+        },
+        rangeText() {
+            const list = (R.rangeRows || []).filter(r => r.amount > 0);
+            if (!list.length) return "";
+            const top = list.slice().sort((a, b) => b.amount - a.amount)[0];
+            const big = list.filter(r => r.range.indexOf("5,001") > -1 || r.range.indexOf("8,000 以上") > -1);
+            const bigAvg = big.length ? Math.round(big.reduce((s, r) => s + r.amount, 0) / big.reduce((s, r) => s + r.count, 0)) : 0;
+            return `赔付金额主要集中于 <em>${top.range}</em> 区间，共 ${top.count} 件，` +
+                `贡献赔付金额 ${this.wan(top.amount)} 万元，占全部赔付的 <em>${top.percent}%</em>。` +
+                `5,000 元以上案件合计 ${big.reduce((s, r) => s + r.count, 0)} 件，案均 ${this.money(bigAvg)} 元，多为住院及大额检查类支出。`;
+        },
+        progressText() {
+            const p = R.progress || {};
+            return `本期保单已运行约 ${R.period.days} 天（${R.policy.start}–${R.period.end}），运行进度约 <em>${R.period.runProgress}%</em>。` +
+                `金额赔付进度 <em>${p.payProgress}%</em>，` +
+                (p.payProgress < R.period.runProgress
+                    ? "低于时间运行进度，保单整体处于健康消耗区间。"
+                    : "略高于时间运行进度，需关注后续消耗速率。");
+        },
+        insText() {
+            const rows = R.insRows || [];
+            if (!rows.length) return "";
+            const main = rows[0];
+            const others = rows.slice(1);
+            const otherSum = others.reduce((s, r) => s + r.percent, 0).toFixed(1);
+            return `本期赔付由 <em>${main.name}</em> 主导，共 ${main.cases} 件，占赔付金额 <em>${main.percent}%</em>` +
+                (others.length ? `；${others.map(r => r.name).join("与")}各涉及 ${others[0].cases} 件，合计占 ${otherSum}%。` : "。");
+        },
+        natureText() {
+            const rows = R.natureRows || [];
+            if (!rows.length) return "";
+            const main = rows[0];
+            const rest = rows.slice(1);
+            let s = `门诊医疗为本期最主要索赔类型，${main.cases} 件，赔付 ${this.wan(main.amount)} 万元，占 ${main.percent}%`;
+            if (rest.length) s += `；${rest[0].name} ${rest[0].cases} 件，赔付 ${this.wan(rest[0].amount)} 万元，占 ${rest[0].percent}%`;
+            s += "。门诊占比显著偏高，结合疾病类型分析，多为药房购药及轻症就诊，说明员工理赔意识较高，同时正常赔付案件已排除以药代医行为。";
+            return s;
+        },
+        ageText() {
+            const rows = (R.ageRows || []).slice().sort((a, b) => b.cases - a.cases);
+            const top = rows[0];
+            const low = (R.ageRows || []).slice().sort((a, b) => a.avg - b.avg)[0];
+            return `<em>${top.name}</em> 年龄段出险 ${top.cases} 件，累计赔付 ${this.wan(top.amount)} 万元，为主力出险群体，人均赔付 ${this.money(top.avgPerson)} 元。` +
+                `${low.name} 群体案均赔付相对较低（${this.money(low.avg)} 元），说明中青年群体小额门诊占比更高，中老年群体医疗消费更为均衡稳定。`;
+        },
+        medText() {
+            const rows = R.medRows || [];
+            if (rows.length < 2) return "";
+            const a = rows[0], b = rows[1];
+            const head = `${a.name}参与案件 ${a.cases} 件（案件占比 ${a.casePercent}%），赔付 ${this.wan(a.amount)} 万元（金额占比 ${a.percent}%）；` +
+                `${b.name} ${b.cases} 件（案件占比 ${b.casePercent}%），赔付 ${this.wan(b.amount)} 万元（金额占比 ${b.percent}%）。`;
+            if (b.avg > a.avg) {
+                return head + `值得关注的是，${b.name}案均赔付（${this.money(b.avg)} 元）高于 ${a.name}（${this.money(a.avg)} 元），` +
+                    `提示该群体可能有更高比例的自费支出转由商业险赔付，建议关注其费用结构。`;
+            }
+            return head + `${b.name}案均赔付（${this.money(b.avg)} 元）低于 ${a.name}（${this.money(a.avg)} 元），` +
+                `费用结构相对可控；建议持续跟踪该群体自费项目占比，防范后续上行风险。`;
+        },
+        levelText() {
+            const rows = R.levelRows || [];
+            const unknown = rows.find(r => r.level === "未定级");
+            const named = rows.filter(r => r.level !== "未定级");
+            let s = "";
+            if (unknown) {
+                const total = rows.reduce((x, r) => x + r.amount, 0) || 1;
+                s += `本期有 ${unknown.cases} 件案件（占赔付金额 ${(unknown.amount / total * 100).toFixed(1)}%）就诊机构为门急诊药房或暂未录入等级的机构，赔付金额 ${this.wan(unknown.amount)} 万元。`;
+            }
+            if (named.length) {
+                s += `有医院等级记录的案件共 ${named.reduce((x, r) => x + r.cases, 0)} 件，涉及` +
+                    named.map(r => r.level + r.grade).join("、") + `医院，赔付金额合计 ¥${this.money(named.reduce((x, r) => x + r.amount, 0))}。`;
+            }
+            return s;
+        },
+        diagText() {
+            const rows = R.diagRows || [];
+            if (!rows.length) return "";
+            const t = rows[0];
+            return `「${t.name}」为第一大诊断，涉及 ${t.cases} 件、${t.persons} 人次，赔付金额 ${this.wan(t.amount)} 万元（占比 ${t.percent}%），高度集中。` +
+                `此类诊断多见于门急诊购药或常规就诊，通常为慢病管理或轻症处理，属于正常消耗。建议后续跟踪该诊断下的就诊频次与单次金额是否持续攀升。`;
+        },
+        pharmacyText() {
+            const p = (R.risk && R.risk.pharmacy) || {};
+            if (!p.cases) return "本期未发现药房就诊案件。";
+            const hit = (R.risk.rows || []).filter(r => r.rule.indexOf("发票") > -1);
+            let s = `本期共 ${p.cases} 件案件就诊于药房，合计赔付 ¥${this.money(p.amount)}，占总赔付金额 ${p.percent}%。` +
+                `诊断集中于「不适和疲劳」和「咨询，未特指」，符合慢病长期购药的典型模式。`;
+            if (hit.length) s += `其中 ${hit[0].name}（${hit[0].caseNo}，¥${this.money(hit[0].amount)}）已命中发票姓名不符风控规则，需重点核实；`;
+            s += "其余药房案件暂未发现明显的以药代医异常，建议后续监测药房购药金额占比变化趋势。";
+            return s;
+        },
+        multiText() {
+            const m = R.multi || {};
+            return `统计期内（以结案时间计），共 <em>${m.persons}</em> 人出险 ≥ 2 次，合计出险 ${m.totalTimes} 次，` +
+                `累计赔付 ¥${this.money(m.amount)}，平均每人出险 ${m.avgTimes} 次。多次出险人员均为赔付案件，整体正常。`;
+        },
+        suggestions() {
+            const out = [];
+            const riskRows = (R.risk && R.risk.rows) || [];
+            const invoiceHit = riskRows.filter(r => r.rule.indexOf("发票") > -1);
+            const infusion = riskRows.filter(r => r.rule.indexOf("静脉输液") > -1);
+            const sup = R.supplement || {};
+
+            if (invoiceHit.length) {
+                out.push({
+                    type: "风控复核",
+                    issue: invoiceHit.map(r => `${r.name}（${r.caseNo}）${r.rule.replace("，涉异常理赔风险", "")}`).join("；"),
+                    level: "中", cls: "t-org",
+                    action: "建议核实发票开票人与被保险人姓名一致性，提示员工报销须使用本人医疗费用发票"
+                });
+            }
+            if (infusion.length) {
+                out.push({
+                    type: "不合理医疗",
+                    issue: `${infusion.map(r => r.name).join("、")}住院无静脉输液记录，触发系统风控规则`,
+                    level: "低", cls: "t-yel",
+                    action: "已完成赔付，建议跟踪后续就诊情况，如持续出现可提请调查"
+                });
+            }
+            if (sup.reasons && sup.reasons.length) {
+                out.push({
+                    type: "补材质量",
+                    issue: sup.reasons.map(r => `${r.type} ${r.count} 件`).join("、"),
+                    level: sup.rate > 10 ? "中" : "低", cls: sup.rate > 10 ? "t-org" : "t-yel",
+                    action: "建议向员工发送理赔材料规范指引，重点说明电子发票提交要求及发票完整性要求"
+                });
+            }
+            if (R.nonPaid && R.nonPaid.length) {
+                out.push({
+                    type: "非赔付撤案",
+                    issue: `${R.nonPaid.length} 件撤案，涉及保障期外就诊、机构不符合约定、材料缺失及票据不合规`,
+                    level: "低", cls: "t-yel",
+                    action: "建议宣导：①保障起期前费用不纳入理赔；②须在二级及以上公立医院就诊；③发票须为本人医疗费用"
+                });
+            }
+            const d0 = (R.diagRows || [])[0];
+            if (d0) {
+                out.push({
+                    type: "高诊断集中",
+                    issue: `「${d0.name}」诊断占赔付金额 ${d0.percent}%，高度集中`,
+                    level: d0.percent > 60 ? "中" : "低", cls: d0.percent > 60 ? "t-org" : "t-yel",
+                    action: "目前属正常门急诊购药等消耗模式，建议持续监测该诊断的月度趋势，如单月显著增加可进一步分析"
+                });
+            }
+            return out;
+        }
+    },
+    methods: {
+        money(c) { return (Number(c || 0) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
+        wan(c) { return (Number(c || 0) / 1000000).toFixed(2); },
+        printPdf() { window.print(); },
+        downloadPdf() { window.location.href = "assets/reports/claims-report-2026-04.pdf"; },
+        goBack() { window.location.href = "manage.html"; }
+    }
+});
+</script>
+</body>
+</html>

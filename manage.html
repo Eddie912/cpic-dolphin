@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>企业客户服务中台</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="assets/data.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", PingFangSC, Helvetica, Arial, sans-serif;
+        }
+        body {
+            background: #f0f2f5;
+            color: #333;
+        }
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+        /* 侧边栏 */
+        .sidebar {
+            width: 240px;
+            background: #fff;
+            border-right: 1px solid #e5e7eb;
+            flex-shrink: 0;
+        }
+        .sidebar-title {
+            height: 60px;
+            line-height: 60px;
+            text-align: center;
+            font-size: 16px;
+            color: #0B4CA1;
+            font-weight: bold;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 0 8px;
+        }
+        .menu-item {
+            height: 48px;
+            line-height: 48px;
+            padding: 0 24px;
+            color: #595959;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+        }
+        .menu-item.active {
+            background: #f0f7ff;
+            border-left-color: #0B4CA1;
+            color: #0B4CA1;
+        }
+        .menu-item:hover {
+            background: #f5f7fa;
+        }
+        /* 主区域 */
+        .main {
+            flex: 1;
+            padding: 24px;
+            overflow: auto;
+        }
+        .page-card {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+            margin-bottom: 16px;
+        }
+        .page-card h2 {
+            font-size: 18px;
+            color: #262626;
+            margin-bottom: 18px;
+        }
+        /* 查询栏 */
+        .search-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        input, select {
+            height: 36px;
+            background: #fff;
+            border: 1px solid #d9d9d9;
+            border-radius: 6px;
+            color: #333;
+            padding: 0 12px;
+            outline: none;
+        }
+        input:focus, select:focus {
+            border-color: #0B4CA1;
+        }
+        .btn {
+            height: 36px;
+            padding: 0 18px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-primary {
+            background: #0B4CA1;
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: #093b82;
+        }
+        .btn-default {
+            background: #fff;
+            border: 1px solid #d9d9d9;
+            color: #595959;
+        }
+        .btn-default:hover {
+            border-color: #0B4CA1;
+            color: #0B4CA1;
+        }
+        .btn-success {
+            background:#239b56;
+            color:#fff;
+        }
+        .btn-success:hover{
+            background:#1b7a45;
+        }
+        .btn-warning{
+            background:#fa8c16;
+            color:#fff;
+        }
+        .btn-warning:hover{
+            background:#d47410;
+        }
+        .btn:disabled{
+            opacity:0.6;
+            cursor:not-allowed;
+        }
+        /* 看板指标卡片 */
+        .dashboard-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .dash-card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+        }
+        .dash-card .label {
+            font-size: 13px;
+            color: #8c8c8c;
+        }
+        .dash-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0B4CA1;
+            margin-top: 8px;
+        }
+        .dash-card .sub {
+            font-size: 12px;
+            color: #999;
+            margin-top: 6px;
+        }
+        /* 人群额度区块 */
+        .group-wrap {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+        .group-card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+        }
+        .group-card h4 {
+            margin-bottom: 12px;
+            color: #262626;
+        }
+        .progress-bg {
+            width: 100%;
+            height: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            margin: 8px 0;
+        }
+        .progress-bar {
+            height: 10px;
+            background: #0B4CA1;
+            border-radius: 5px;
+        }
+        .group-item {
+            font-size: 14px;
+            line-height: 28px;
+        }
+        /* 表格横向滚动适配多列 */
+        .table-wrap {
+            width: 100%;
+            overflow-x: auto;
+        }
+        table {
+            min-width: 1200px;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        thead tr {
+            background: #fafafa;
+        }
+        th, td {
+            padding: 12px 10px;
+            border: 1px solid #f0f0f0;
+            text-align: left;
+            font-size: 13px;
+        }
+        th {
+            color: #595959;
+            font-weight: normal;
+            white-space: nowrap;
+        }
+        tbody tr:hover {
+            background: #f8fafc;
+        }
+        .empty-row td {
+            text-align: center;
+            color: #999;
+            padding: 24px;
+        }
+        /* 标签样式 */
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin: 2px;
+            white-space: nowrap;
+        }
+        .tag-blue {
+            background: #e6f4ff;
+            color: #0B4CA1;
+        }
+        .tag-purple {
+            background: #f9f0ff;
+            color: #722ed1;
+        }
+        .tag-orange {
+            background: #fff7e6;
+            color: #fa8c16;
+        }
+        .tag-green {
+            background: #e6ffed;
+            color: #239b56;
+        }
+        .tag-red {
+            background: #fff1f0;
+            color: #f5222d;
+        }
+        /* 分页 */
+        .pagination {
+            margin-top: 16px;
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+        .page {
+            padding: 6px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .page.active {
+            background: #0B4CA1;
+            border-color: #0B4CA1;
+            color: #fff;
+        }
+        .page:hover:not(.active) {
+            border-color: #0B4CA1;
+            color: #0B4CA1;
+        }
+        /*弹窗通用*/
+        .modal-mask{
+            position:fixed;
+            left:0;
+            top:0;
+            right:0;
+            bottom:0;
+            background:rgba(0,0,0,0.45);
+            z-index:99;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+        }
+        .modal-box{
+            width:80%;
+            max-width:1000px;
+            background:#fff;
+            border-radius:8px;
+            overflow:hidden;
+        }
+        .modal-sm{
+            max-width:520px;
+            width:90%;
+        }
+        .modal-header{
+            padding:14px 20px;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            border-bottom:1px solid #eee;
+        }
+        .modal-body{
+            padding:20px;
+            min-height:500px;
+            background:#f7f8fa;
+        }
+        .modal-body-sm{
+            min-height:auto;
+            background:#fff;
+        }
+        .modal-footer{
+            padding:14px 20px;
+            border-top:1px solid #eee;
+            display:flex;
+            justify-content:flex-end;
+            gap:10px;
+        }
+        .modal-close{
+            cursor:pointer;
+            font-size:20px;
+            color:#666;
+        }
+        .upload-form-item{
+            margin-bottom:16px;
+        }
+        .upload-form-item label{
+            display:block;
+            margin-bottom:6px;
+            font-size:14px;
+            color:#333;
+        }
+        .hidden-file-input{
+            display:none;
+        }
+        .file-tip{
+            font-size:12px;
+            color:#999;
+            margin-top:4px;
+        }
+        @media (max-width: 1200px) {
+            .dashboard-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .group-wrap {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ===== 部署增强样式 ===== */
+        .page.disabled { opacity: .38; cursor: not-allowed; pointer-events: none; }
+        .page-info { align-self: center; margin-left: 10px; color: #8c8c8c; font-size: 12px; }
+        .table-meta { display: flex; justify-content: space-between; align-items: center;
+            color: #8c8c8c; font-size: 12px; margin-bottom: 8px; }
+        .table-meta b { color: #0B4CA1; font-size: 13px; }
+        .toast { position: fixed; top: 26px; left: 50%; transform: translateX(-50%);
+            background: #0B4CA1; color: #fff; padding: 11px 24px; border-radius: 6px;
+            font-size: 13px; z-index: 9999; box-shadow: 0 8px 26px rgba(11,76,161,.3);
+            animation: toastIn .22s ease; }
+        @keyframes toastIn { from { opacity: 0; transform: translate(-50%, -8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+        .sidebar-footer { margin-top: 18px; padding: 16px; border-top: 1px solid #f0f0f0; }
+        .side-back { display: block; text-align: center; height: 36px; line-height: 36px;
+            border: 1px solid #0B4CA1; color: #0B4CA1; border-radius: 4px; font-size: 13px;
+            cursor: pointer; transition: .18s; }
+        .side-back:hover { background: #0B4CA1; color: #fff; }
+        .side-meta { margin-top: 12px; font-size: 11px; color: #a0a4ab; line-height: 1.7; }
+        .board-tip { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+            background: #f0f7ff; border: 1px solid #d6e6ff; color: #2c5f9e;
+            padding: 8px 14px; border-radius: 4px; font-size: 12px; margin-bottom: 14px; }
+        .board-tip b { color: #0B4CA1; }
+        .dash-card .label small { display: block; font-weight: 400; color: #a0a4ab;
+            font-size: 11px; margin-top: 2px; }
+        .table-wrap .btn { line-height: 26px; }
+        /* 宽表横向滚动，单元格不换行 */
+        .table-wrap { overflow-x: auto; }
+        .table-wrap th, .table-wrap td { white-space: nowrap; }
+        .table-wrap table { font-size: 12.5px; }
+        .table-wrap th, .table-wrap td { padding: 8px 9px; }
+        .table-wrap table { min-width: 100%; }
+        .table-wrap td:first-child, .table-wrap th:first-child { position: sticky; left: 0; background: #fff; z-index: 1; }
+        .table-wrap thead th:first-child { background: #fafafa; }
+        .table-wrap tbody tr:nth-child(even) td:first-child { background: #fafafa; }
+    </style>
+</head>
+<body>
+<div id="app" class="layout">
+    <!--侧边菜单-->
+    <div class="sidebar">
+        <div class="sidebar-title">企业客户服务中台</div>
+        <div class="menu-item" :class="{active: currentPage===0}" @click="currentPage=0">数据看板</div>
+        <div class="menu-item" :class="{active: currentPage===1}" @click="currentPage=1">支付信息列表</div>
+        <div class="menu-item" :class="{active: currentPage===2}" @click="currentPage=2">理赔信息列表</div>
+        <div class="menu-item" :class="{active: currentPage===3}" @click="currentPage=3">员工信息查询</div>
+        <!--新增菜单：理赔分析报告-->
+        <div class="menu-item" :class="{active: currentPage===4}" @click="currentPage=4">理赔分析报告</div>
+        <div class="sidebar-footer">
+            <div class="side-back" @click="goScreen">← 返回数据大屏</div>
+            <div class="side-meta">
+                {{ meta.tenant }}<br/>
+                保单 {{ meta.policy.start }} 起保<br/>
+                数据截至 {{ meta.asOf }}
+            </div>
+        </div>
+    </div>
+    <!--主内容区-->
+    <div class="toast" v-if="toast.show">{{ toast.msg }}</div>
+    <div class="main">
+        <!--页面0：数据看板-->
+        <div v-if="currentPage===0">
+            <div class="page-card">
+                <h2>数据看板</h2>
+                <div class="board-tip">
+                    <span>统计期间 <b>{{ meta.period.start }} ~ {{ meta.period.end }}</b>（以结案日期为准）</span>
+                    <span>·</span>
+                    <span>保单运行 <b>{{ meta.period.days }}</b> 天 / 时间进度 <b>{{ boardData.timeProgress }}%</b></span>
+                    <span>·</span>
+                    <span>承保 <b>{{ boardData.insuredCount }}</b> 人 / 年度保费 <b>¥{{ money(meta.policy.premium) }}</b></span>
+                </div>
+                <div class="search-bar">
+                    <input v-model="boardFilter.startDate" placeholder="统计开始日期">
+                    <input v-model="boardFilter.endDate" placeholder="统计结束日期">
+                    <select v-model="boardFilter.planCode">
+                        <option value="">全部保障计划</option>
+                        <option value="plan01">员工基础购药保障</option>
+                        <option value="plan02">员工大额医疗补充</option>
+                        <option value="plan03">家属医疗关爱计划</option>
+                    </select>
+                    <button class="btn btn-primary" @click="refreshBoard">查询刷新数据</button>
+                    <button class="btn btn-default" @click="exportDashboard">导出统计报表</button>
+                </div>
+            </div>
+            <!-- 成本与预算核心指标 -->
+            <div class="dashboard-row">
+                <div class="dash-card">
+                    <div class="label">承保人数</div>
+                    <div class="value">{{ boardData.insuredCount }}</div>
+                    <div class="sub">已出险 {{ boardData.accidentCount }} 人 / 占比 {{ boardData.accidentRate }}%</div>
+                </div>
+                <div class="dash-card">
+                    <div class="label">基金累计赔付（元）</div>
+                    <div class="value">{{ boardData.totalClaim }}</div>
+                    <div class="sub">药房直付 {{ boardData.pharmacyPay }} + 保险理赔 {{ boardData.insuranceClaim }}</div>
+                </div>
+                <div class="dash-card">
+                    <div class="label">药房直付金额（元）</div>
+                    <div class="value">{{ boardData.pharmacyPay }}</div>
+                    <div class="sub">线上 {{ boardData.onlinePay }} / 线下 {{ boardData.offlinePay }}</div>
+                </div>
+                <div class="dash-card">
+                    <div class="label">保险理赔金额（元）</div>
+                    <div class="value">{{ boardData.insuranceClaim }}</div>
+                    <div class="sub">事后报案赔付</div>
+                </div>
+            </div>
+            <div class="dashboard-row">
+                <div class="dash-card">
+                    <div class="label">人均赔付金额（元）</div>
+                    <div class="value">{{ boardData.avgClaim }}</div>
+                    <div class="sub">总赔付 / 参保人数</div>
+                </div>
+                <div class="dash-card">
+                    <div class="label">获赔率</div>
+                    <div class="value">{{ boardData.claimRate }}%</div>
+                    <div class="sub">赔付案件 / 总报案案件</div>
+                </div>
+                <div class="dash-card">
+                    <div class="label">月度赔付趋势</div>
+                    <div class="value">{{ boardData.monthTrend }}%</div>
+                    <div class="sub">（本月-上月）/ 上月 * 100%</div>
+                </div>
+                <div class="dash-card">
+                    <div class="label">时间进度 / 金额赔付进度</div>
+                    <div class="value">{{ boardData.timeProgress }}% / {{ boardData.amountProgress }}%</div>
+                    <div class="sub">人员出险进度 {{ boardData.personProgress }}%</div>
+                </div>
+            </div>
+            <!-- 分人员类型额度使用明细 -->
+            <div class="page-card">
+                <h2>分人员类型额度使用明细</h2>
+                <div class="group-wrap">
+                    <div class="group-card" v-for="(group, idx) in groupList" :key="idx">
+                        <h4>{{ group.name }}</h4>
+                        <div class="group-item">分配额度：{{ group.quota }} 元</div>
+                        <div class="group-item">已使用金额：{{ group.used }} 元</div>
+                        <div class="group-item">剩余额度：{{ group.remain }} 元</div>
+                        <div class="group-item">使用率：{{ group.rate }}%</div>
+                        <div class="progress-bg">
+                            <div class="progress-bar" :style="{ width: group.rate + '%' }"></div>
+                        </div>
+                        <div class="group-item">占整体基金比例：{{ group.totalPercent }}%</div>
+                    </div>
+                </div>
+            </div>
+            <!-- 理赔分析核心指标 -->
+            <div class="page-card">
+                <h2>理赔多维分析</h2>
+                <div class="dashboard-row" style="grid-template-columns: repeat(4,1fr);">
+                    <div class="dash-card">
+                        <div class="label">分年龄段案件量 / 案均赔付</div>
+                        <div class="value" style="font-size:13px;line-height:1.9;">
+                            <span v-for="(a, i) in boardData.ageData" :key="i">
+                                {{ a.name }}：{{ a.cases }} 件 / {{ a.avg }} 元<br>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="dash-card">
+                        <div class="label">赔付金额区间分布</div>
+                        <div class="value" style="font-size:13px;line-height:1.9;">
+                            <span v-for="(a, i) in boardData.amountRange" :key="i">
+                                {{ a.name }}：{{ a.count }} 件<br>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="dash-card">
+                        <div class="label">审核结论分布</div>
+                        <div class="value" style="font-size:13px;line-height:1.9;">
+                            <span v-for="(a, i) in boardData.conclusion" :key="i">
+                                {{ a.name }}：{{ a.count }} 件（{{ a.percent }}%）<br>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="dash-card">
+                        <div class="label">分索赔性质赔付占比</div>
+                        <div class="value" style="font-size:13px;line-height:1.9;">
+                            <span v-for="(a, i) in boardData.nature" :key="i">
+                                {{ a.name }}：{{ a.percent }}%<br>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="dashboard-row" style="grid-template-columns: repeat(3,1fr); margin-top:16px;">
+                    <div class="dash-card">
+                        <div class="label">分医院等级赔付占比</div>
+                        <div class="value" style="font-size:13px;line-height:1.9;">
+                            <span v-for="(a, i) in boardData.hospitalLevel" :key="i">
+                                {{ a.name }}：{{ a.value }}%<br>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="dash-card">
+                        <div class="label">疾病诊断 TOP5</div>
+                        <div class="value" style="font-size:13px;line-height:1.9;">
+                            <span v-for="(a, i) in boardData.diseaseTop" :key="i">
+                                {{ a.name }}：{{ a.percent }}%<br>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="dash-card">
+                        <div class="label">补材原因分类</div>
+                        <div class="value" style="font-size:13px;line-height:1.9;">
+                            <span v-for="(a, i) in boardData.materialReason" :key="i">
+                                {{ a.name }}：{{ a.percent }}%<br>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--页面1：支付信息列表-->
+        <div v-if="currentPage===1" class="page-card">
+            <h2>支付信息列表</h2>
+            <div class="search-bar">
+                <input v-model="payFilter.startDate" placeholder="消费开始日期">
+                <input v-model="payFilter.endDate" placeholder="消费结束日期">
+                <input v-model="payFilter.empName" placeholder="员工姓名/工号">
+                <input v-model="payFilter.shop" placeholder="门店名称">
+                <select v-model="payFilter.layer">
+                    <option value="">全部人员分层</option>
+                    <option value="高管">高管</option>
+                    <option value="员工">员工</option>
+                    <option value="员工家属">员工家属</option>
+                </select>
+                <button class="btn btn-primary" @click="searchPayList">查询</button>
+                <button class="btn btn-default" @click="resetPayFilter">重置</button>
+                <button class="btn btn-default" @click="exportPayExcel">导出Excel</button>
+            </div>
+            <div class="table-meta">
+                <span>共 <b>{{ payFilterList.length }}</b> 条记录，第 {{ payPage }} / {{ payTotalPages }} 页</span>
+                <span>消费总金额合计 ¥{{ paySum }}</span>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>消费日期</th>
+                            <th>结算单号</th>
+                            <th>员工姓名</th>
+                            <th>手机号（脱敏）</th>
+                            <th>证件号码（脱敏）</th>
+                            <th>员工层级</th>
+                            <th>人员分类</th>
+                            <th>门店类型</th>
+                            <th>门店名称</th>
+                            <th>保障计划</th>
+                            <th>消费总金额</th>
+                            <th>基金支付金额</th>
+                            <th>个人自付金额</th>
+                            <th>支付状态</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(item, idx) in pagedPayList" :key="idx">
+                            <td>{{ item.consumeDate }}</td>
+                            <td>{{ item.orderNo }}</td>
+                            <td>{{ item.empName }}</td>
+                            <td>{{ item.mobileMask }}</td>
+                            <td>{{ item.idCardMask }}</td>
+                            <td><span class="tag" :class="item.layerTag">{{ item.layer }}</span></td>
+                            <td>{{ item.userCategory }}</td>
+                            <td>{{ item.storeType }}</td>
+                            <td>{{ item.shopName }}</td>
+                            <td>{{ item.planName }}</td>
+                            <td>{{ item.totalAmount }}</td>
+                            <td>{{ item.fundPayAmount }}</td>
+                            <td>{{ item.selfPayAmount }}</td>
+                            <td><span class="tag" :class="item.statusTag">{{ item.payStatus }}</span></td>
+                        </tr>
+                        <tr v-if="payFilterList.length === 0" class="empty-row">
+                            <td colspan="14">暂无匹配数据</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination">
+                <div class="page" :class="{disabled: payPage===1}" @click="goPage('pay',-1)">上一页</div>
+                <div class="page" v-for="p in pageNumbers(payTotalPages, payPage)" :key="p"
+                     :class="{active: p===payPage}" @click="setPage('pay', p)">{{ p }}</div>
+                <div class="page" :class="{disabled: payPage===payTotalPages}" @click="goPage('pay',1)">下一页</div>
+                <span class="page-info">共 {{ payFilterList.length }} 条</span>
+            </div>
+        </div>
+        <!--页面2：理赔信息列表-->
+        <div v-if="currentPage===2" class="page-card">
+            <h2>理赔信息列表</h2>
+            <div class="search-bar">
+                <input v-model="claimFilter.startDate" placeholder="报案开始日期">
+                <input v-model="claimFilter.endDate" placeholder="报案结束日期">
+                <input v-model="claimFilter.empName" placeholder="员工姓名/手机号">
+                <select v-model="claimFilter.empLayer">
+                    <option value="">全部员工层级</option>
+                    <option value="高管">高管</option>
+                    <option value="员工">员工</option>
+                    <option value="员工家属">员工家属</option>
+                </select>
+                <select v-model="claimFilter.claimStatus">
+                    <option value="">全部理赔状态</option>
+                    <option value="已赔付">已赔付</option>
+                    <option value="审核中">审核中</option>
+                    <option value="拒赔">拒赔</option>
+                    <option value="撤案">撤案</option>
+                    <option value="通融赔付">通融赔付</option>
+                    <option value="和解">和解</option>
+                </select>
+                <button class="btn btn-primary" @click="searchClaimList">查询</button>
+                <button class="btn btn-default" @click="resetClaimFilter">重置</button>
+                <button class="btn btn-default" @click="exportClaimExcel">导出Excel</button>
+            </div>
+            <div class="table-meta">
+                <span>共 <b>{{ claimFilterList.length }}</b> 条记录，第 {{ claimPage }} / {{ claimTotalPages }} 页</span>
+                <span>赔付金额合计 ¥{{ claimSum }}</span>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>报案日期</th>
+                            <th>出险日期</th>
+                            <th>赔付结论</th>
+                            <th>员工姓名</th>
+                            <th>手机号（脱敏）</th>
+                            <th>证件号码（脱敏）</th>
+                            <th>员工层级</th>
+                            <th>人员分类</th>
+                            <th>出险类型</th>
+                            <th>赔付类型</th>
+                            <th>就医机构</th>
+                            <th>保障方案</th>
+                            <th>单据总额</th>
+                            <th>赔付金额</th>
+                            <th>个人承担</th>
+                            <th>理赔状态</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(item, idx) in pagedClaimList" :key="idx">
+                            <td>{{ item.reportDate }}</td>
+                            <td>{{ item.accidentDate }}</td>
+                            <td><span class="tag" :class="item.conclusionTag">{{ item.conclusion }}</span></td>
+                            <td>{{ item.empName }}</td>
+                            <td>{{ item.mobileMask }}</td>
+                            <td>{{ item.idCardMask }}</td>
+                            <td><span class="tag" :class="item.layerTag">{{ item.layer }}</span></td>
+                            <td>{{ item.userCategory }}</td>
+                            <td>{{ item.accidentType }}</td>
+                            <td>{{ item.payType }}</td>
+                            <td>{{ item.hospitalName }}</td>
+                            <td>{{ item.planName }}</td>
+                            <td>{{ item.billTotal }}</td>
+                            <td>{{ item.claimPay }}</td>
+                            <td>{{ item.selfAmount }}</td>
+                            <td><span class="tag" :class="item.statusTag">{{ item.claimStatus }}</span></td>
+                        </tr>
+                        <tr v-if="claimFilterList.length === 0" class="empty-row">
+                            <td colspan="16">暂无匹配数据</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination">
+                <div class="page" :class="{disabled: claimPage===1}" @click="goPage('claim',-1)">上一页</div>
+                <div class="page" v-for="p in pageNumbers(claimTotalPages, claimPage)" :key="p"
+                     :class="{active: p===claimPage}" @click="setPage('claim', p)">{{ p }}</div>
+                <div class="page" :class="{disabled: claimPage===claimTotalPages}" @click="goPage('claim',1)">下一页</div>
+                <span class="page-info">共 {{ claimFilterList.length }} 条</span>
+            </div>
+        </div>
+        <!--页面3：员工信息查询-->
+        <div v-if="currentPage===3" class="page-card">
+            <h2>员工信息查询</h2>
+            <div class="search-bar">
+                <input v-model="empFilter.name" placeholder="员工姓名/手机号">
+                <select v-model="empFilter.layer">
+                    <option value="">全部员工层级</option>
+                    <option value="高管">高管</option>
+                    <option value="员工">员工</option>
+                    <option value="员工家属">员工家属</option>
+                </select>
+                <select v-model="empFilter.userCategory">
+                    <option value="">全部人员分类</option>
+                    <option value="在保">在保</option>
+                    <option value="退保">退保</option>
+                </select>
+                <button class="btn btn-primary" @click="searchEmpList">查询</button>
+                <button class="btn btn-default" @click="resetEmpFilter">重置</button>
+                <button class="btn btn-default" @click="exportEmpExcel">导出人员清单</button>
+            </div>
+            <div class="table-meta">
+                <span>共 <b>{{ empFilterList.length }}</b> 名员工，第 {{ empPage }} / {{ empTotalPages }} 页</span>
+                <span>已赔付金额合计 ¥{{ empSum }}</span>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>员工姓名</th>
+                            <th>手机号（脱敏）</th>
+                            <th>证件号码（脱敏）</th>
+                            <th>员工层级</th>
+                            <th>保险起期</th>
+                            <th>人员分类</th>
+                            <th>账户金额(元)</th>
+                            <th>已赔付金额(元)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(item, idx) in pagedEmpList" :key="idx">
+                            <td>{{ item.name }}</td>
+                            <td>{{ item.mobileMask }}</td>
+                            <td>{{ item.idCardMask }}</td>
+                            <td><span class="tag" :class="item.layerClass">{{ item.layer }}</span></td>
+                            <td>{{ item.insuranceStart }}</td>
+                            <td>{{ item.userCategory }}</td>
+                            <td>{{ item.accountAmount }}</td>
+                            <td>{{ item.claimTotalAmount }}</td>
+                        </tr>
+                        <tr v-if="empFilterList.length === 0" class="empty-row">
+                            <td colspan="8">暂无匹配数据</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination">
+                <div class="page" :class="{disabled: empPage===1}" @click="goPage('emp',-1)">上一页</div>
+                <div class="page" v-for="p in pageNumbers(empTotalPages, empPage)" :key="p"
+                     :class="{active: p===empPage}" @click="setPage('emp', p)">{{ p }}</div>
+                <div class="page" :class="{disabled: empPage===empTotalPages}" @click="goPage('emp',1)">下一页</div>
+                <span class="page-info">共 {{ empFilterList.length }} 条</span>
+            </div>
+        </div>
+
+        <!--页面4：理赔分析报告【新版：甲方上传word文档列表，预览/下载 + 上传弹窗】-->
+        <div v-if="currentPage===4">
+            <div class="page-card">
+                <h2>理赔分析报告</h2>
+                <div class="search-bar">
+                    <input v-model="reportFilter.startDate" placeholder="报告周期开始日期">
+                    <input v-model="reportFilter.endDate" placeholder="报告周期结束日期">
+                    <select v-model="reportFilter.reportType">
+                        <option value="">全部报告类型</option>
+                        <option value="月度报告">月度报告</option>
+                        <option value="季度报告">季度报告</option>
+                        <option value="年度报告">年度报告</option>
+                    </select>
+                    <button class="btn btn-primary" @click="searchReportList">查询</button>
+                    <button class="btn btn-default" @click="resetReportFilter">重置</button>
+                    <!--新增上传报告按钮-->
+                    <button class="btn btn-success" @click="openUploadModal">上传报告</button>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>报告名称</th>
+                            <th>报告类型</th>
+                            <th>报告周期</th>
+                            <th>上传时间</th>
+                            <th>上传人</th>
+                            <th>文件格式</th>
+                            <th>操作</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr v-for="(item,idx) in reportFilterList" :key="idx">
+                            <td>{{item.reportName}}</td>
+                            <td><span class="tag tag-blue">{{item.reportType}}</span></td>
+                            <td>{{item.periodDesc}}</td>
+                            <td>{{item.uploadTime}}</td>
+                            <td>{{item.uploadUser}}</td>
+                            <td>{{item.fileSuffix}}</td>
+                            <td>
+                                <button class="btn btn-warning" style="height:28px;padding:0 10px;font-size:12px" @click="openPreview(item)">预览</button>
+                                <button class="btn btn-success" style="height:28px;padding:0 10px;font-size:12px;margin-left:6px" @click="downloadFile(item)">下载</button>
+                            </td>
+                        </tr>
+                        <tr v-if="reportFilterList.length===0" class="empty-row">
+                            <td colspan="7">暂无上传的理赔分析报告文档</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination">
+                    <span class="page-info" style="margin-right:auto">共 {{ reportFilterList.length }} 份报告</span>
+                </div>
+            </div>
+
+            <!--【新增】上传报告弹窗-->
+            <div v-if="uploadModal.show" class="modal-mask" @click.self="closeUploadModal">
+                <div class="modal-box modal-sm">
+                    <div class="modal-header">
+                        <span style="font-weight:bold">上传理赔分析报告(Word)</span>
+                        <span class="modal-close" @click="closeUploadModal">×</span>
+                    </div>
+                    <div class="modal-body modal-body-sm">
+                        <div class="upload-form-item">
+                            <label>选择Word文档</label>
+                            <input ref="reportFileInput" class="hidden-file-input" type="file" accept=".doc,.docx" @change="onFileSelect">
+                            <button class="btn btn-default" @click="$refs.reportFileInput.click()">选择文件</button>
+                            <div class="file-tip">已选文件：{{uploadForm.fileName || "未选择"}}</div>
+                            <div class="file-tip">仅支持 doc / docx 格式Word文档</div>
+                        </div>
+                        <div class="upload-form-item">
+                            <label>报告类型</label>
+                            <select v-model="uploadForm.reportType">
+                                <option value="">请选择报告类型</option>
+                                <option value="月度报告">月度报告</option>
+                                <option value="季度报告">季度报告</option>
+                                <option value="年度报告">年度报告</option>
+                            </select>
+                        </div>
+                        <div class="upload-form-item">
+                            <label>报告周期起始</label>
+                            <input type="date" v-model="uploadForm.periodStart"/>
+                        </div>
+                        <div class="upload-form-item">
+                            <label>报告周期结束</label>
+                            <input type="date" v-model="uploadForm.periodEnd"/>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-default" @click="closeUploadModal">取消</button>
+                        <button class="btn btn-primary" :disabled="uploadLoading" @click="submitUpload">
+                            {{ uploadLoading ? "上传中..." : "确认上传" }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!--文档预览弹窗（模拟word预览）-->
+            <div v-if="previewModal.show" class="modal-mask" @click.self="closePreview">
+                <div class="modal-box">
+                    <div class="modal-header">
+                        <span style="font-weight:bold">{{previewModal.item.reportName}}</span>
+                        <span class="modal-close" @click="closePreview">×</span>
+                    </div>
+                    <div class="modal-body">
+                        <p style="color:#666;text-align:center;margin-top:120px;">
+                            【文档预览】<br/>
+                            当前模拟预览Word文档：{{previewModal.item.reportName}}<br/>
+                            真实业务需后端将Word转换为HTML/PDF用于在线预览。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+/* ================= 企业客户服务中台 · 后台管理端 ================= */
+const D = window.CPIC_DATA || {};
+const DB = D.dashboard || {};
+const RP = D.report || {};
+
+/* 分 → 千分位金额 */
+function money(cents) {
+    return (Number(cents || 0) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+/* 数值 → 千分位整数 */
+function num(v) {
+    return Number(v || 0).toLocaleString("en-US");
+}
+
+/* ---------- 导出：优先真 xlsx，CDN 不可用时降级 CSV ---------- */
+function aoaToCsv(aoa) {
+    return aoa.map(function (row) {
+        return row.map(function (v) {
+            var s = v === null || v === undefined ? "" : String(v);
+            return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+        }).join(",");
+    }).join("\r\n");
+}
+function downloadCsv(filename, aoa) {
+    var blob = new Blob(["\ufeff" + aoaToCsv(aoa)], { type: "text/csv;charset=utf-8;" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename + ".csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 3000);
+}
+function downloadXlsx(filename, sheets) {
+    if (!window.XLSX) { downloadCsv(filename, sheets[0].aoa); return "csv"; }
+    var wb = XLSX.utils.book_new();
+    sheets.forEach(function (s) {
+        var ws = XLSX.utils.aoa_to_sheet(s.aoa);
+        var w = s.aoa[0].map(function (c) { return { wch: Math.min(38, Math.max(11, String(c).length * 2 + 2)) }; });
+        ws["!cols"] = w;
+        XLSX.utils.book_append_sheet(wb, ws, s.name.slice(0, 30));
+    });
+    XLSX.writeFile(wb, filename + ".xlsx");
+    return "xlsx";
+}
+function todayTag() {
+    var d = new Date();
+    var p = function (n) { return String(n).padStart(2, "0"); };
+    return "" + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate());
+}
+
+new Vue({
+    el: "#app",
+    data() {
+        var layerRows = (D.layerRows || []).map(function (r) {
+            return {
+                name: r.name,
+                quota: money(r.quota),
+                used: money(r.used),
+                remain: money(r.remain),
+                rate: r.rate,
+                totalPercent: r.totalPercent,
+                persons: r.persons,
+                cases: r.cases
+            };
+        });
+        var ageRows = (RP.ageRows || []);
+        var rangeRows = (RP.rangeRows || []);
+        var conclRows = (RP.conclusionRows || []);
+        var natureRows = (RP.natureRows || []);
+        var levelRows = (RP.levelRows || []);
+        var diagRows = (RP.diagRows || []);
+        var supReasons = (RP.supplement && RP.supplement.reasons) || [];
+
+        var levelTotal = levelRows.reduce(function (s, r) { return s + r.amount; }, 0) || 1;
+        var lv = function (pred) {
+            return (levelRows.filter(pred).reduce(function (s, r) { return s + r.amount; }, 0) / levelTotal * 100).toFixed(1);
+        };
+
+        return {
+            currentPage: 0,
+            pageSize: 20,
+            meta: D.meta || {},
+            dashboard: DB,
+            toast: { show: false, msg: "" },
+
+            /* ---------- 数据看板 ---------- */
+            boardFilter: { startDate: "", endDate: "", planCode: "" },
+            boardData: {
+                insuredCount: num(DB.insuredCount),
+                accidentCount: num(DB.accidentCount),
+                accidentRate: DB.accidentRate,
+                totalClaim: money(DB.totalClaim),
+                pharmacyPay: money(DB.pharmacyPay),
+                insuranceClaim: money(DB.insuranceClaim),
+                onlinePay: money(DB.onlinePay),
+                offlinePay: money(DB.offlinePay),
+                onlineCount: num(DB.onlineCount),
+                offlineCount: num(DB.offlineCount),
+                avgClaim: money(DB.avgClaim),
+                claimRate: DB.claimRate,
+                monthTrend: DB.monthTrend,
+                timeProgress: DB.timeProgress,
+                amountProgress: DB.amountProgress,
+                personProgress: DB.personProgress,
+                payCount: num(DB.payCount),
+                claimCount: num(DB.claimCount),
+                paidCases: num(DB.paidCases),
+                ageData: ageRows.map(function (r) { return { name: r.name, cases: r.cases, avg: money(r.avg) }; }),
+                amountRange: rangeRows.map(function (r) { return { name: r.range, count: r.count }; }),
+                conclusion: conclRows.map(function (r) { return { name: r.name, count: r.count, percent: r.percent }; }),
+                nature: natureRows.map(function (r) { return { name: r.name, percent: r.percent }; }),
+                hospitalLevel: [
+                    { name: "三级医院", value: lv(function (r) { return r.level === "三级"; }) },
+                    { name: "二级医院", value: lv(function (r) { return r.level === "二级"; }) },
+                    { name: "药房/未定级", value: lv(function (r) { return r.level === "未定级"; }) }
+                ],
+                diseaseTop: diagRows.slice(0, 5).map(function (r) { return { name: r.name, percent: r.percent }; }),
+                materialReason: supReasons.slice(0, 4).map(function (r) {
+                    return { name: r.type, percent: (r.count / (RP.supplement.cases || 1) * 100).toFixed(0) };
+                })
+            },
+            groupList: layerRows,
+
+            /* ---------- 支付信息 ---------- */
+            payFilter: { startDate: "", endDate: "", empName: "", shop: "", layer: "" },
+            payList: D.payments || [],
+            payFilterList: [],
+            payPage: 1,
+
+            /* ---------- 理赔信息 ---------- */
+            claimFilter: { startDate: "", endDate: "", empName: "", empLayer: "", claimStatus: "" },
+            claimList: D.claims || [],
+            claimFilterList: [],
+            claimPage: 1,
+
+            /* ---------- 员工查询 ---------- */
+            empFilter: { name: "", layer: "", userCategory: "" },
+            empList: D.employees || [],
+            empFilterList: [],
+            empPage: 1,
+
+            /* ---------- 理赔分析报告 ---------- */
+            reportFilter: { startDate: "", endDate: "", reportType: "" },
+            reportList: [],
+            reportFilterList: [],
+            previewModal: { show: false, item: null },
+            uploadModal: { show: false },
+            uploadLoading: false,
+            uploadForm: { file: null, fileName: "", reportType: "", periodStart: "", periodEnd: "" }
+        };
+    },
+
+    computed: {
+        pagedPayList() {
+            var s = (this.payPage - 1) * this.pageSize;
+            return this.payFilterList.slice(s, s + this.pageSize);
+        },
+        payTotalPages() { return Math.max(1, Math.ceil(this.payFilterList.length / this.pageSize)); },
+        pagedClaimList() {
+            var s = (this.claimPage - 1) * this.pageSize;
+            return this.claimFilterList.slice(s, s + this.pageSize);
+        },
+        claimTotalPages() { return Math.max(1, Math.ceil(this.claimFilterList.length / this.pageSize)); },
+        pagedEmpList() {
+            var s = (this.empPage - 1) * this.pageSize;
+            return this.empFilterList.slice(s, s + this.pageSize);
+        },
+        empTotalPages() { return Math.max(1, Math.ceil(this.empFilterList.length / this.pageSize)); },
+        paySum() { return money(this.sumBy(this.payFilterList, "totalAmount")); },
+        claimSum() { return money(this.sumBy(this.claimFilterList, "claimPay")); },
+        empSum() { return money(this.sumBy(this.empFilterList, "claimTotalAmount")); }
+    },
+
+    mounted() {
+        this.payFilterList = this.payList.slice();
+        this.claimFilterList = this.claimList.slice();
+        this.empFilterList = this.empList.slice();
+        var p = (RP.period || {});
+        this.reportList = [
+            {
+                reportName: "2026年04月上半月理赔分析报告",
+                reportType: "月度报告",
+                periodDesc: (p.start || "") + " ~ " + (p.end || ""),
+                uploadTime: "2026-04-18 09:12:10",
+                uploadUser: "太保科技",
+                fileSuffix: ".pdf",
+                online: true,
+                fileUrl: "assets/reports/claims-report-2026-04.pdf"
+            },
+            {
+                reportName: "2026年第一季度理赔分析报告",
+                reportType: "季度报告",
+                periodDesc: "2026-01-01 ~ 2026-03-31",
+                uploadTime: "2026-04-08 16:40:22",
+                uploadUser: "太保科技",
+                fileSuffix: ".pdf",
+                online: false,
+                fileUrl: "assets/reports/claims-report-2026-04.pdf"
+            },
+            {
+                reportName: "2025年度理赔分析报告",
+                reportType: "年度报告",
+                periodDesc: "2025-01-01 ~ 2025-12-31",
+                uploadTime: "2026-01-12 16:45:33",
+                uploadUser: "太保科技",
+                fileSuffix: ".pdf",
+                online: false,
+                fileUrl: "assets/reports/claims-report-2026-04.pdf"
+            }
+        ];
+        this.reportFilterList = this.reportList.slice();
+    },
+
+    methods: {
+        money(cents) {
+            return (Number(cents || 0) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        },
+        sumBy(list, key) {
+            return list.reduce(function (s, i) {
+                return s + Number(String(i[key] || 0).replace(/,/g, "")) * 100;
+            }, 0);
+        },
+        showToast(msg) {
+            var self = this;
+            this.toast.msg = msg;
+            this.toast.show = true;
+            clearTimeout(this._t);
+            this._t = setTimeout(function () { self.toast.show = false; }, 2600);
+        },
+        goPage(type, delta) {
+            var map = { pay: "payPage", claim: "claimPage", emp: "empPage" };
+            var maxMap = { pay: this.payTotalPages, claim: this.claimTotalPages, emp: this.empTotalPages };
+            var key = map[type];
+            var next = this[key] + delta;
+            if (next < 1 || next > maxMap[type]) return;
+            this[key] = next;
+            var main = document.querySelector(".main");
+            if (main) main.scrollTop = 0;
+        },
+        setPage(type, p) {
+            var map = { pay: "payPage", claim: "claimPage", emp: "empPage" };
+            this[map[type]] = p;
+            var main = document.querySelector(".main");
+            if (main) main.scrollTop = 0;
+        },
+        pageNumbers(total, current) {
+            var arr = [], i;
+            var start = Math.max(1, Math.min(current - 2, total - 4));
+            for (i = start; i <= Math.min(total, start + 4); i++) arr.push(i);
+            return arr;
+        },
+
+        goScreen() { window.location.href = "index.html"; },
+
+        /* ---------- 看板 ---------- */
+        refreshBoard() {
+            this.showToast("已按当前筛选条件刷新统计数据");
+        },
+        exportDashboard() {
+            var b = this.boardData;
+            var s1 = [["指标", "数值"],
+                ["承保人数", b.insuredCount],
+                ["已出险人数", b.accidentCount],
+                ["出险率", b.accidentRate + "%"],
+                ["基金累计赔付（元）", b.totalClaim],
+                ["药房直付（元）", b.pharmacyPay],
+                ["保险理赔（元）", b.insuranceClaim],
+                ["线上直付（元）", b.onlinePay],
+                ["线下直付（元）", b.offlinePay],
+                ["人均赔付（元）", b.avgClaim],
+                ["获赔率", b.claimRate + "%"],
+                ["时间进度", b.timeProgress + "%"],
+                ["金额赔付进度", b.amountProgress + "%"],
+                ["人员出险进度", b.personProgress + "%"]];
+
+            var s2 = [["人员类型", "分配额度", "已使用", "剩余额度", "使用率(%)", "占整体基金比例(%)"]].concat(
+                this.groupList.map(function (g) { return [g.name, g.quota, g.used, g.remain, g.rate, g.totalPercent]; }));
+
+            var s3 = [["年龄段", "案件数", "出险人数", "赔付金额(元)", "案均赔付(元)", "人均赔付(元)"]].concat(
+                (RP.ageRows || []).map(function (r) { return [r.name, r.cases, r.persons, money(r.amount), money(r.avg), money(r.avgPerson)]; }));
+
+            var s4 = [["赔付金额区间", "案件数", "合计赔付(元)", "金额占比(%)"]].concat(
+                (RP.rangeRows || []).map(function (r) { return [r.range, r.count, money(r.amount), r.percent]; }));
+
+            var s5 = [["审核结论", "案件数", "占比(%)", "赔付金额(元)"]].concat(
+                (RP.conclusionRows || []).map(function (r) { return [r.name, r.count, r.percent, money(r.amount)]; }));
+
+            var s6 = [["医院等级", "评级", "案件数", "赔付金额(元)", "案均赔付(元)", "涉及医院数"]].concat(
+                (RP.levelRows || []).map(function (r) { return [r.level, r.grade, r.cases, money(r.amount), money(r.avg), r.hospitals]; }));
+
+            var s7 = [["排名", "疾病名称", "案件数", "出险人数", "赔付金额(元)", "案均赔付(元)", "金额占比(%)"]].concat(
+                (RP.diagRows || []).map(function (r) { return [r.rank, r.name, r.cases, r.persons, money(r.amount), money(r.avg), r.percent]; }));
+
+            var kind = downloadXlsx("数据看板统计报表_" + todayTag(), [
+                { name: "核心指标", aoa: s1 }, { name: "额度使用", aoa: s2 },
+                { name: "年龄段", aoa: s3 }, { name: "金额区间", aoa: s4 },
+                { name: "审核结论", aoa: s5 }, { name: "医院等级", aoa: s6 },
+                { name: "疾病TOP", aoa: s7 }
+            ]);
+            this.showToast("统计报表已导出（" + (kind === "xlsx" ? "Excel 7 个工作表" : "CSV") + "）");
+        },
+
+        /* ---------- 支付 ---------- */
+        searchPayList() {
+            var f = this.payFilter;
+            this.payFilterList = this.payList.filter(function (item) {
+                var ok = true;
+                if (f.startDate) ok = ok && item.consumeDate >= f.startDate;
+                if (f.endDate) ok = ok && item.consumeDate <= f.endDate;
+                if (f.empName) ok = ok && (item.empName.indexOf(f.empName) > -1 || item.mobileMask.indexOf(f.empName) > -1);
+                if (f.shop) ok = ok && item.shopName.indexOf(f.shop) > -1;
+                if (f.layer) ok = ok && item.layer === f.layer;
+                return ok;
+            });
+            this.payPage = 1;
+            this.showToast("筛选出 " + this.payFilterList.length + " 条支付记录");
+        },
+        resetPayFilter() {
+            this.payFilter = { startDate: "", endDate: "", empName: "", shop: "", layer: "" };
+            this.payFilterList = this.payList.slice();
+            this.payPage = 1;
+        },
+        exportPayExcel() {
+            var cols = ["消费日期", "结算单号", "员工姓名", "手机号（脱敏）", "证件号码（脱敏）", "员工层级",
+                "人员分类", "门店类型", "门店名称", "保障计划", "消费总金额", "基金支付金额", "个人自付金额", "支付状态"];
+            var rows = this.payFilterList.map(function (i) {
+                return [i.consumeDate, i.orderNo, i.empName, i.mobileMask, i.idCardMask, i.layer, i.userCategory,
+                    i.storeType, i.shopName, i.planName, i.totalAmount, i.fundPayAmount, i.selfPayAmount, i.payStatus];
+            });
+            var kind = downloadXlsx("支付信息列表_" + todayTag(), [{ name: "支付信息", aoa: [cols].concat(rows) }]);
+            this.showToast("已导出 " + rows.length + " 条支付记录（" + (kind === "xlsx" ? "Excel" : "CSV") + "）");
+        },
+
+        /* ---------- 理赔 ---------- */
+        searchClaimList() {
+            var f = this.claimFilter;
+            this.claimFilterList = this.claimList.filter(function (item) {
+                var ok = true;
+                if (f.startDate) ok = ok && item.reportDate >= f.startDate;
+                if (f.endDate) ok = ok && item.reportDate <= f.endDate;
+                if (f.empName) ok = ok && (item.empName.indexOf(f.empName) > -1 || item.mobileMask.indexOf(f.empName) > -1);
+                if (f.empLayer) ok = ok && item.layer === f.empLayer;
+                if (f.claimStatus) ok = ok && item.claimStatus === f.claimStatus;
+                return ok;
+            });
+            this.claimPage = 1;
+            this.showToast("筛选出 " + this.claimFilterList.length + " 条理赔记录");
+        },
+        resetClaimFilter() {
+            this.claimFilter = { startDate: "", endDate: "", empName: "", empLayer: "", claimStatus: "" };
+            this.claimFilterList = this.claimList.slice();
+            this.claimPage = 1;
+        },
+        exportClaimExcel() {
+            var cols = ["报案日期", "出险日期", "赔付结论", "员工姓名", "手机号（脱敏）", "证件号码（脱敏）", "员工层级",
+                "人员分类", "出险类型", "赔付类型", "就医机构", "保障方案", "单据总额", "赔付金额", "个人承担", "理赔状态"];
+            var rows = this.claimFilterList.map(function (i) {
+                return [i.reportDate, i.accidentDate, i.conclusion, i.empName, i.mobileMask, i.idCardMask, i.layer,
+                    i.userCategory, i.accidentType, i.payType, i.hospitalName, i.planName, i.billTotal, i.claimPay,
+                    i.selfAmount, i.claimStatus];
+            });
+            var kind = downloadXlsx("理赔信息列表_" + todayTag(), [{ name: "理赔信息", aoa: [cols].concat(rows) }]);
+            this.showToast("已导出 " + rows.length + " 条理赔记录（" + (kind === "xlsx" ? "Excel" : "CSV") + "）");
+        },
+
+        /* ---------- 员工 ---------- */
+        searchEmpList() {
+            var f = this.empFilter;
+            this.empFilterList = this.empList.filter(function (item) {
+                var ok = true;
+                if (f.name) ok = ok && (item.name.indexOf(f.name) > -1 || item.mobileMask.indexOf(f.name) > -1);
+                if (f.layer) ok = ok && item.layer === f.layer;
+                if (f.userCategory) ok = ok && item.userCategory === f.userCategory;
+                return ok;
+            });
+            this.empPage = 1;
+            this.showToast("筛选出 " + this.empFilterList.length + " 名员工");
+        },
+        resetEmpFilter() {
+            this.empFilter = { name: "", layer: "", userCategory: "" };
+            this.empFilterList = this.empList.slice();
+            this.empPage = 1;
+        },
+        exportEmpExcel() {
+            var cols = ["员工姓名", "手机号（脱敏）", "证件号码（脱敏）", "员工层级", "保险起期", "人员分类", "账户金额(元)", "已赔付金额(元)"];
+            var rows = this.empFilterList.map(function (i) {
+                return [i.name, i.mobileMask, i.idCardMask, i.layer, i.insuranceStart, i.userCategory,
+                    i.accountAmount, i.claimTotalAmount];
+            });
+            var kind = downloadXlsx("员工人员清单_" + todayTag(), [{ name: "人员清单", aoa: [cols].concat(rows) }]);
+            this.showToast("已导出 " + rows.length + " 名员工（" + (kind === "xlsx" ? "Excel" : "CSV") + "）");
+        },
+
+        /* ---------- 理赔分析报告 ---------- */
+        searchReportList() {
+            var f = this.reportFilter;
+            this.reportFilterList = this.reportList.filter(function (item) {
+                var ok = true;
+                if (f.reportType) ok = ok && item.reportType === f.reportType;
+                return ok;
+            });
+        },
+        resetReportFilter() {
+            this.reportFilter = { startDate: "", endDate: "", reportType: "" };
+            this.reportFilterList = this.reportList.slice();
+        },
+        openPreview(row) {
+            if (row.online) {
+                window.open("report.html", "_blank");
+            } else {
+                this.previewModal.show = true;
+                this.previewModal.item = row;
+            }
+        },
+        closePreview() {
+            this.previewModal.show = false;
+            this.previewModal.item = null;
+        },
+        downloadFile(row) {
+            var a = document.createElement("a");
+            a.href = row.fileUrl;
+            a.download = row.reportName + ".pdf";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            this.showToast("正在下载：" + row.reportName);
+        },
+
+        /* ---------- 上传报告 ---------- */
+        openUploadModal() {
+            this.uploadModal.show = true;
+            this.uploadForm = { file: null, fileName: "", reportType: "", periodStart: "", periodEnd: "" };
+        },
+        closeUploadModal() {
+            this.uploadModal.show = false;
+            this.uploadLoading = false;
+        },
+        onFileSelect(e) {
+            var file = e.target.files[0];
+            if (!file) return;
+            var allowSuffix = [".doc", ".docx", ".pdf"];
+            var suffix = file.name.slice(file.name.lastIndexOf("."));
+            if (allowSuffix.indexOf(suffix.toLowerCase()) < 0) {
+                this.showToast("文件格式不支持，请上传 doc / docx / pdf");
+                return;
+            }
+            this.uploadForm.file = file;
+            this.uploadForm.fileName = file.name;
+        },
+        submitUpload() {
+            var self = this;
+            var f = this.uploadForm;
+            if (!f.file) { this.showToast("请选择报告文件"); return; }
+            if (!f.reportType) { this.showToast("请选择报告类型"); return; }
+            if (!f.periodStart || !f.periodEnd) { this.showToast("请填写报告周期"); return; }
+            if (f.periodStart > f.periodEnd) { this.showToast("周期起始日期不能大于结束日期"); return; }
+            this.uploadLoading = true;
+            setTimeout(function () {
+                var d = new Date();
+                var pad = function (n) { return String(n).padStart(2, "0"); };
+                var t = d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " +
+                    pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+                var suffix = f.file.name.slice(f.file.name.lastIndexOf("."));
+                var item = {
+                    reportName: f.reportType.replace("报告", "") + "理赔分析报告",
+                    reportType: f.reportType,
+                    periodDesc: f.periodStart + " ~ " + f.periodEnd,
+                    uploadTime: t,
+                    uploadUser: "当前登录用户",
+                    fileSuffix: suffix,
+                    online: false,
+                    fileUrl: "assets/reports/claims-report-2026-04.pdf"
+                };
+                self.reportList.unshift(item);
+                self.reportFilterList = self.reportList.slice();
+                self.uploadLoading = false;
+                self.closeUploadModal();
+                self.showToast("报告上传成功");
+            }, 900);
+        }
+    }
+});
+</script>
+</body>
+</html>

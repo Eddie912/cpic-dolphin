@@ -1,0 +1,3116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>企业客户服务中台 · 健康资金数据看板</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.js"></script>
+    <script src="assets/data.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", PingFangSC, Helvetica, Arial, sans-serif;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #050815;
+        }
+
+        #app {
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(ellipse at 50% -10%, #0d1b3e 0%, #070b1a 50%, #050815 100%);
+            color: #c8d6f0;
+            padding: 10px 16px 6px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #app::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(35, 120, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(35, 120, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        #app::after {
+            content: '';
+            position: absolute;
+            top: -240px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 1000px;
+            height: 500px;
+            background: radial-gradient(ellipse, rgba(35, 120, 255, 0.18), transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .dash-title-bar {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 46px;
+            flex-shrink: 0;
+            margin-bottom: 8px;
+        }
+
+        .dash-title-bar .title-deco-left,
+        .dash-title-bar .title-deco-right {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(35, 120, 255, 0.7), rgba(0, 229, 255, 0.4), transparent);
+            position: relative;
+        }
+
+        .dash-title-bar .title-deco-left::before,
+        .dash-title-bar .title-deco-right::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #2378ff);
+            border-radius: 2px;
+            box-shadow: 0 0 12px #2378ff;
+        }
+
+        .dash-title-bar .title-deco-left::before {
+            right: 0;
+            transform: scaleX(-1);
+        }
+
+        .dash-title-bar .title-deco-right::before {
+            left: 0;
+        }
+
+        .dash-title-bar .title-deco-left::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: -3px;
+            width: 8px;
+            height: 7px;
+            background: #00e5ff;
+            box-shadow: 0 0 12px #00e5ff, 0 0 24px #2378ff;
+            transform: rotate(45deg);
+        }
+
+        .dash-title-bar .title-deco-right::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: -3px;
+            width: 8px;
+            height: 7px;
+            background: #00e5ff;
+            box-shadow: 0 0 12px #00e5ff, 0 0 24px #2378ff;
+            transform: rotate(45deg);
+        }
+
+        .dash-title-main {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 0 40px;
+            position: relative;
+        }
+
+        .dash-title-main .title-icon {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #2378ff;
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 0 0 20px rgba(35, 120, 255, 0.8), inset 0 0 12px rgba(35, 120, 255, 0.4);
+            flex-shrink: 0;
+        }
+
+        .dash-title-main .title-icon::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00e5ff;
+            box-shadow: 0 0 14px #00e5ff;
+            animation: pulse 2s infinite;
+        }
+
+        .dash-title-main .title-icon::after {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: -6px;
+            right: -6px;
+            bottom: -6px;
+            border-radius: 50%;
+            border: 1px solid rgba(35, 120, 255, 0.35);
+            animation: rotate 8s linear infinite;
+            border-top-color: #00e5ff;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0) }
+            to { transform: rotate(360deg) }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1) }
+            50% { opacity: 0.5; transform: translate(-50%, -50%) scale(0.75) }
+        }
+
+        .dash-title-main .title-text {
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: 7px;
+            background: linear-gradient(180deg, #ffffff 0%, #6db3ff 60%, #2378ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(35, 120, 255, 0.8);
+        }
+
+        .dash-title-main .title-sub {
+            font-size: 9px;
+            color: #5a6f9e;
+            letter-spacing: 6px;
+            position: absolute;
+            bottom: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+        }
+
+        /* ===== 上3下2布局 ===== */
+        .tech-body {
+            position: relative;
+            z-index: 5;
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1.15fr;
+            gap: 10px;
+            overflow: hidden;
+            min-height: 0;
+            margin-top: 6px;
+        }
+
+        /* 上排 3 块 */
+        .row-top-1 { grid-column: 1; grid-row: 1; }
+        .row-top-2 { grid-column: 2; grid-row: 1; }
+        .row-top-3 { grid-column: 3; grid-row: 1; }
+        /* 下排 2 块 */
+        .row-bottom-1 { grid-column: 1 / span 1.5; grid-row: 2; }
+        .row-bottom-2 { grid-column: 2.5 / span 1.5; grid-row: 2; }
+
+        /* 下排两块的另一种写法：用5列网格 */
+        .tech-body {
+            grid-template-columns: repeat(6, 1fr);
+        }
+        .row-top-1 { grid-column: 1 / span 2; grid-row: 1; }
+        .row-top-2 { grid-column: 3 / span 2; grid-row: 1; }
+        .row-top-3 { grid-column: 5 / span 2; grid-row: 1; }
+        .row-bottom-1 { grid-column: 1 / span 3; grid-row: 2; }
+        .row-bottom-2 { grid-column: 4 / span 3; grid-row: 2; }
+
+        .module-block {
+            background:
+                linear-gradient(135deg, rgba(35, 120, 255, 0.09) 0%, rgba(13, 27, 62, 0.65) 100%),
+                rgba(13, 27, 62, 0.55);
+            border: 1px solid rgba(35, 120, 255, 0.32);
+            border-radius: 12px;
+            padding: 8px 12px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(8px);
+            box-shadow:
+                0 0 25px rgba(35, 120, 255, 0.12),
+                inset 0 0 40px rgba(35, 120, 255, 0.04),
+                inset 0 1px 0 rgba(109, 179, 255, 0.15);
+            min-height: 0;
+        }
+
+        .module-block .corner {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-color: #00e5ff;
+            border-style: solid;
+            border-width: 0;
+            opacity: 0.9;
+            filter: drop-shadow(0 0 6px #00e5ff);
+        }
+
+        .module-block .corner.tl { top: 5px; left: 5px; border-top-width: 2px; border-left-width: 2px; border-top-left-radius: 5px; }
+        .module-block .corner.tr { top: 5px; right: 5px; border-top-width: 2px; border-right-width: 2px; border-top-right-radius: 5px; }
+        .module-block .corner.bl { bottom: 5px; left: 5px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-left-radius: 5px; }
+        .module-block .corner.br { bottom: 5px; right: 5px; border-bottom-width: 2px; border-right-width: 2px; border-bottom-right-radius: 5px; }
+
+        .module-block::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 10%;
+            width: 80%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #2378ff, #00e5ff, #2378ff, transparent);
+            border-radius: 2px;
+            box-shadow: 0 0 12px rgba(35, 120, 255, 0.9);
+            animation: scan 4s ease-in-out infinite;
+        }
+
+        @keyframes scan {
+            0%, 100% { opacity: 0.5; transform: scaleX(0.8) }
+            50% { opacity: 1; transform: scaleX(1) }
+        }
+
+        .module-block::after {
+            content: '';
+            position: absolute;
+            right: -40px;
+            top: -40px;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 229, 255, 0.12), transparent 70%);
+            pointer-events: none;
+        }
+
+        .module-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            flex-shrink: 0;
+            padding-bottom: 5px;
+            border-bottom: 1px solid rgba(35, 120, 255, 0.18);
+            position: relative;
+        }
+
+        .module-header::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 60px;
+            height: 2px;
+            background: linear-gradient(90deg, #00e5ff, #2378ff, transparent);
+            border-radius: 2px;
+            box-shadow: 0 0 8px #2378ff;
+        }
+
+        .module-title {
+            font-size: 12px;
+            color: #fff;
+            letter-spacing: 1.5px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            text-shadow: 0 0 18px rgba(35, 120, 255, 0.8);
+        }
+
+        .module-title .mt-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 5px;
+            background: linear-gradient(135deg, rgba(35, 120, 255, 0.4), rgba(0, 229, 255, 0.15));
+            border: 1px solid rgba(0, 229, 255, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            box-shadow: 0 0 12px rgba(0, 229, 255, 0.5), inset 0 0 8px rgba(0, 229, 255, 0.2);
+            flex-shrink: 0;
+        }
+
+        .module-tag { display: none; }
+
+        /* 时间粒度筛选 */
+        .granularity-tabs {
+            display: flex;
+            gap: 3px;
+            background: rgba(35, 120, 255, 0.05);
+            border: 1px solid rgba(35, 120, 255, 0.25);
+            border-radius: 5px;
+            padding: 2px;
+        }
+        .granularity-tab {
+            padding: 3px 10px;
+            font-size: 10px;
+            color: #6db3ff;
+            letter-spacing: 0.5px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            background: transparent;
+            outline: none;
+        }
+        .granularity-tab.active {
+            background: linear-gradient(135deg, #1a5cd7, #2378ff);
+            color: #fff;
+            box-shadow: 0 0 10px rgba(35, 120, 255, 0.5);
+        }
+        .granularity-tab:hover:not(.active) {
+            background: rgba(35, 120, 255, 0.15);
+            color: #fff;
+        }
+
+        .module-content {
+            flex: 1;
+            display: grid;
+            gap: 6px;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .kpi-row-4 {
+            grid-column: span 2;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+
+        .kpi-card {
+            background: linear-gradient(135deg, rgba(35, 120, 255, 0.14), rgba(35, 120, 255, 0.03));
+            border: 1px solid rgba(35, 120, 255, 0.22);
+            border-radius: 6px;
+            padding: 6px 8px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 3px;
+            height: 100%;
+            background: linear-gradient(180deg, #00e5ff, #2378ff, transparent);
+            box-shadow: 0 0 8px #2378ff;
+        }
+
+        .kpi-card .kc-label {
+            font-size: 9px;
+            color: #8ba3d4;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .kpi-card .kc-value {
+            font-size: 14px;
+            font-weight: bold;
+            color: #fff;
+            margin-top: 2px;
+            font-family: "DIN Alternate", sans-serif;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .kpi-card .kc-value.cyan { color: #00e5ff; }
+        .kpi-card .kc-value.green { color: #2ee6a8; }
+        .kpi-card .kc-value.orange { color: #ffb347; }
+        .kpi-card .kc-value.red { color: #ff6b6b; }
+
+        .kpi-card .kc-sub {
+            font-size: 8px;
+            color: #5a6f9e;
+            margin-top: 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sub-panel-title {
+            font-size: 9px;
+            color: #6db3ff;
+            letter-spacing: 0.6px;
+            margin-bottom: 4px;
+            padding-bottom: 3px;
+            border-bottom: 1px solid rgba(35, 120, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        .sub-panel-title::before {
+            content: '';
+            width: 3px;
+            height: 9px;
+            background: linear-gradient(180deg, #00e5ff, #2378ff);
+            border-radius: 2px;
+        }
+
+        .sub-panel {
+            display: flex;
+            flex-direction: column;
+            background: rgba(35, 120, 255, 0.03);
+            border: 1px solid rgba(35, 120, 255, 0.12);
+            border-radius: 6px;
+            padding: 6px 8px;
+            min-height: 0;
+        }
+
+        /* ===== 设置入口 + 后台切换按钮 ===== */
+        .module-settings {
+            width: 20px;
+            height: 20px;
+            border-radius: 5px;
+            background: linear-gradient(135deg, rgba(35, 120, 255, 0.4), rgba(0, 229, 255, 0.15));
+            border: 1px solid rgba(0, 229, 255, 0.5);
+            color: #9fd8ff;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.35);
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .module-settings:hover {
+            color: #fff;
+            background: linear-gradient(135deg, #1a5cd7, #2378ff);
+            box-shadow: 0 0 12px rgba(35, 120, 255, 0.7);
+        }
+
+        .settings-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(3, 7, 18, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .settings-card {
+            width: 360px;
+            background: linear-gradient(135deg, rgba(35, 120, 255, 0.18), rgba(13, 27, 62, 0.97));
+            border: 1px solid rgba(35, 120, 255, 0.45);
+            border-radius: 12px;
+            padding: 16px 18px;
+            color: #c8d6f0;
+            box-shadow: 0 0 40px rgba(35, 120, 255, 0.35);
+        }
+
+        .settings-card h3 {
+            font-size: 14px;
+            color: #fff;
+            letter-spacing: 2px;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .settings-card h3::before {
+            content: '';
+            width: 3px;
+            height: 12px;
+            background: linear-gradient(180deg, #00e5ff, #2378ff);
+            border-radius: 2px;
+        }
+
+        .set-field { margin-bottom: 10px; }
+
+        .set-field label {
+            display: block;
+            font-size: 11px;
+            color: #8ba3d4;
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .set-field input, .set-field select {
+            width: 100%;
+            padding: 6px 8px;
+            font-size: 12px;
+            color: #fff;
+            background: rgba(35, 120, 255, 0.08);
+            border: 1px solid rgba(35, 120, 255, 0.35);
+            border-radius: 5px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .set-field input:focus, .set-field select:focus { border-color: #00e5ff; }
+        .set-field select option { background: #0d1b3e; }
+
+        .set-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+        .set-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+        .set-btn {
+            padding: 6px 18px;
+            font-size: 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            border: none;
+            letter-spacing: 1px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .set-btn.primary { background: linear-gradient(135deg, #1a5cd7, #2378ff); color: #fff; }
+        .set-btn.primary:hover { box-shadow: 0 0 12px rgba(35, 120, 255, 0.7); }
+        .set-btn.ghost { background: transparent; color: #6db3ff; border: 1px solid rgba(35, 120, 255, 0.4); }
+        .set-btn.ghost:hover { color: #fff; border-color: #00e5ff; }
+
+        .backend-btn {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 14px;
+            font-size: 11px;
+            letter-spacing: 1.5px;
+            color: #9fd8ff;
+            background: linear-gradient(135deg, rgba(35, 120, 255, 0.25), rgba(0, 229, 255, 0.08));
+            border: 1px solid rgba(35, 120, 255, 0.5);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 0 12px rgba(35, 120, 255, 0.3);
+            white-space: nowrap;
+        }
+
+        .backend-btn:hover {
+            color: #fff;
+            background: linear-gradient(135deg, #1a5cd7, #2378ff);
+            box-shadow: 0 0 16px rgba(35, 120, 255, 0.8);
+        }
+
+        .backend-btn .bb-icon { font-size: 12px; }
+
+        /* ===== 模块一：健康委托资金预算与消耗（紧凑版） ===== */
+        .fund-content {
+            grid-template-columns: 1.4fr 1fr;
+            grid-template-rows: auto 1fr;
+            gap: 6px;
+        }
+
+        .fund-chart-wrap {
+            position: relative;
+            background: rgba(35, 120, 255, 0.04);
+            border: 1px solid rgba(35, 120, 255, 0.15);
+            border-radius: 6px;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .fund-chart-wrap svg { width: 100%; height: 100%; display: block; }
+
+        .chart-title-mini {
+            position: absolute;
+            top: 4px;
+            left: 8px;
+            font-size: 9px;
+            color: #6db3ff;
+            z-index: 2;
+            letter-spacing: 0.8px;
+        }
+
+        .chart-legend-mini {
+            position: absolute;
+            top: 4px;
+            right: 8px;
+            display: flex;
+            gap: 8px;
+            font-size: 8px;
+            color: #8ba3d4;
+            z-index: 2;
+        }
+
+        .chart-legend-mini .lg-item { display: flex; align-items: center; gap: 3px; }
+        .chart-legend-mini .lg-line { width: 10px; height: 2px; border-radius: 1px; }
+        .chart-legend-mini .lg-line.time-line { background: #6db3ff; }
+        .chart-legend-mini .lg-line.fund-line { background: #00e5ff; }
+
+        .fund-right-col {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-height: 0;
+        }
+
+        .predict-box {
+            background: linear-gradient(135deg, rgba(46, 230, 168, 0.14), rgba(46, 230, 168, 0.03));
+            border: 1px solid rgba(46, 230, 168, 0.35);
+            border-radius: 6px;
+            padding: 6px 8px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .predict-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 3px;
+            height: 100%;
+            background: linear-gradient(180deg, #2ee6a8, transparent);
+        }
+
+        .predict-box .pb-label { font-size: 9px; color: #8ba3d4; }
+        .predict-box .pb-value {
+            font-size: 13px;
+            font-weight: bold;
+            color: #2ee6a8;
+            margin-top: 1px;
+            font-family: "DIN Alternate", sans-serif;
+        }
+        .predict-box .pb-sub { font-size: 8px; color: #5a6f9e; margin-top: 1px; }
+
+        .quota-dist {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            justify-content: center;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .quota-dist-title { font-size: 8px; color: #8ba3d4; margin-bottom: 1px; }
+
+        .quota-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 8px;
+        }
+
+        .quota-item .qi-label {
+            width: 44px;
+            color: #8ba3d4;
+            flex-shrink: 0;
+            font-size: 8px;
+        }
+
+        .quota-item .qi-bar-bg {
+            flex: 1;
+            height: 5px;
+            background: rgba(35, 120, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .quota-item .qi-bar {
+            height: 100%;
+            border-radius: 3px;
+            background: linear-gradient(90deg, #2378ff, #00e5ff);
+        }
+
+        .quota-item .qi-val {
+            width: 26px;
+            text-align: right;
+            color: #fff;
+            font-family: "DIN Alternate", sans-serif;
+            font-size: 8px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        /* ===== 模块二：健康委托资金运营情况（直付三层 + 报销） ===== */
+        .op-content {
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto auto 1fr;
+            gap: 6px;
+        }
+
+        .op-kpi-row {
+            grid-column: span 2;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+
+        .category-title {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 10px;
+            color: #6db3ff;
+            letter-spacing: 1px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            padding-bottom: 3px;
+            border-bottom: 1px solid rgba(35, 120, 255, 0.15);
+        }
+
+        .category-title::before {
+            content: '';
+            width: 3px;
+            height: 11px;
+            background: linear-gradient(180deg, #00e5ff, #2378ff);
+            border-radius: 2px;
+        }
+
+        .category-total {
+            margin-left: auto;
+            font-family: "DIN Alternate", sans-serif;
+            font-size: 11px;
+            font-weight: bold;
+            color: #00e5ff;
+        }
+
+        .stack-bar-wrap { display: flex; flex-direction: column; gap: 5px; }
+
+        .stack-bar {
+            display: flex;
+            height: 26px;
+            border-radius: 5px;
+            overflow: hidden;
+            border: 1px solid rgba(35, 120, 255, 0.25);
+            position: relative;
+        }
+
+        .stack-seg {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            min-width: 0;
+        }
+
+        .stack-seg.c1 { background: linear-gradient(90deg, #2378ff, #4a8fff); }
+        .stack-seg.c2 { background: linear-gradient(90deg, #00e5ff, #4aeeff); }
+        .stack-seg.c3 { background: linear-gradient(90deg, #ffb347, #ffcb7a); }
+        .stack-seg.c4 { background: linear-gradient(90deg, #2ee6a8, #7dffce); }
+        .stack-seg.c5 { background: linear-gradient(90deg, #b37fff, #d0a8ff); }
+
+        .stack-seg .ss-label {
+            font-size: 9px;
+            font-weight: bold;
+            color: #fff;
+            padding: 0 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .stack-seg .ss-pct {
+            font-size: 10px;
+            font-weight: bold;
+            color: #fff;
+            font-family: "DIN Alternate", sans-serif;
+        }
+
+        .stack-detail-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+        .stack-detail-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
+        .stack-detail-row-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+
+        .stack-detail {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 6px;
+            background: rgba(35, 120, 255, 0.05);
+            border: 1px solid rgba(35, 120, 255, 0.15);
+            border-left: 3px solid;
+            border-radius: 4px;
+        }
+
+        .stack-detail.c1 { border-left-color: #2378ff; }
+        .stack-detail.c2 { border-left-color: #00e5ff; }
+        .stack-detail.c3 { border-left-color: #ffb347; }
+        .stack-detail.c4 { border-left-color: #2ee6a8; }
+        .stack-detail.c5 { border-left-color: #b37fff; }
+
+        .stack-detail .sd-info { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+        .stack-detail .sd-name { font-size: 8px; color: #c8d6f0; font-weight: bold; white-space: nowrap; }
+        .stack-detail .sd-amount {
+            font-size: 9px;
+            font-weight: bold;
+            color: #fff;
+            font-family: "DIN Alternate", sans-serif;
+        }
+        .stack-detail .sd-pct {
+            font-size: 10px;
+            font-weight: bold;
+            font-family: "DIN Alternate", sans-serif;
+        }
+        .stack-detail.c1 .sd-pct { color: #2378ff; }
+        .stack-detail.c2 .sd-pct { color: #00e5ff; }
+        .stack-detail.c3 .sd-pct { color: #ffb347; }
+        .stack-detail.c4 .sd-pct { color: #2ee6a8; }
+        .stack-detail.c5 .sd-pct { color: #b37fff; }
+
+        /* ===== 模块四 · 底部三拼：线下 TOP5 / 线上 TOP5 / 品类占比 ===== */
+        .op-triple {
+            grid-column: span 2;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1.06fr;
+            gap: 6px;
+            min-height: 0;
+        }
+
+        .tri-panel {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            padding: 6px 8px 5px;
+            border: 1px solid rgba(35, 120, 255, 0.14);
+            border-radius: 6px;
+            background: rgba(35, 120, 255, 0.03);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tri-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            opacity: 0.9;
+        }
+
+        .tri-panel.t-offline::before { background: linear-gradient(90deg, #ffb347, rgba(255, 203, 122, 0.35), transparent); }
+        .tri-panel.t-online::before { background: linear-gradient(90deg, #00e5ff, rgba(74, 238, 255, 0.35), transparent); }
+        .tri-panel.t-mix::before { background: linear-gradient(90deg, #2378ff, #00e5ff, #b37fff, transparent); }
+
+        .tri-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 4px;
+            padding-bottom: 4px;
+            margin-bottom: 2px;
+            border-bottom: 1px solid rgba(35, 120, 255, 0.12);
+            flex-shrink: 0;
+        }
+
+        .tri-title {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 10px;
+            font-weight: bold;
+            color: #dbe7ff;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
+        }
+
+        .tri-title::before {
+            content: '';
+            width: 5px;
+            height: 5px;
+            border-radius: 1px;
+            flex-shrink: 0;
+        }
+
+        .t-offline .tri-title::before { background: #ffb347; box-shadow: 0 0 8px #ffb347; }
+        .t-online .tri-title::before { background: #00e5ff; box-shadow: 0 0 8px #00e5ff; }
+        .t-mix .tri-title::before { background: #b37fff; box-shadow: 0 0 8px #b37fff; }
+
+        .tri-total {
+            font-size: 9px;
+            color: #5a6f9e;
+            white-space: nowrap;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .tri-total b {
+            font-size: 10px;
+            color: #fff;
+            font-family: "DIN Alternate", sans-serif;
+            font-weight: bold;
+            letter-spacing: 0.3px;
+        }
+
+        .t-offline .tri-total b { color: #ffcb7a; }
+        .t-online .tri-total b { color: #4aeeff; }
+        .t-mix .tri-total b { color: #c9a6ff; }
+
+        .tri-list {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            gap: 3px;
+            min-height: 0;
+        }
+
+        .tri-row { display: flex; align-items: center; gap: 6px; }
+
+        .tri-row .tr-rank {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            border-radius: 4px;
+            font-size: 8.5px;
+            font-weight: bold;
+            font-family: "DIN Alternate", sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #7f97c9;
+            background: rgba(35, 120, 255, 0.1);
+            border: 1px solid rgba(35, 120, 255, 0.25);
+        }
+
+        .t-offline .tri-row:nth-child(1) .tr-rank { color: #20140a; background: linear-gradient(135deg, #ffd9a0, #ffb347); border-color: transparent; box-shadow: 0 0 8px rgba(255, 179, 71, 0.55); }
+        .t-offline .tri-row:nth-child(2) .tr-rank { color: #ffd9a0; background: rgba(255, 179, 71, 0.22); border-color: rgba(255, 179, 71, 0.5); }
+        .t-offline .tri-row:nth-child(3) .tr-rank { color: #ffcb7a; background: rgba(255, 179, 71, 0.14); border-color: rgba(255, 179, 71, 0.35); }
+
+        .t-online .tri-row:nth-child(1) .tr-rank { color: #04141c; background: linear-gradient(135deg, #a9f6ff, #00e5ff); border-color: transparent; box-shadow: 0 0 8px rgba(0, 229, 255, 0.55); }
+        .t-online .tri-row:nth-child(2) .tr-rank { color: #a9f6ff; background: rgba(0, 229, 255, 0.2); border-color: rgba(0, 229, 255, 0.45); }
+        .t-online .tri-row:nth-child(3) .tr-rank { color: #7deaff; background: rgba(0, 229, 255, 0.12); border-color: rgba(0, 229, 255, 0.3); }
+
+        .tri-row .tr-body {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .tri-row .tr-top {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 5px;
+            min-width: 0;
+        }
+
+        .tri-row .tr-name {
+            font-size: 9.5px;
+            color: #dbe7ff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
+        }
+
+        .tri-row .tr-val {
+            flex-shrink: 0;
+            font-size: 10px;
+            font-weight: bold;
+            color: #fff;
+            font-family: "DIN Alternate", sans-serif;
+            letter-spacing: 0.3px;
+        }
+
+        .tri-row .tr-bot {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .tri-row .tr-bar-bg {
+            flex: 1;
+            min-width: 14px;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(35, 120, 255, 0.12);
+            overflow: hidden;
+        }
+
+        .tri-row .tr-bar {
+            display: block;
+            height: 100%;
+            border-radius: 2px;
+            animation: barGrow 0.9s cubic-bezier(0.22, 0.9, 0.3, 1) both;
+        }
+
+        .t-offline .tr-bar { background: linear-gradient(90deg, #ff9c1a, #ffcb7a); box-shadow: 0 0 6px rgba(255, 179, 71, 0.45); }
+        .t-online .tr-bar { background: linear-gradient(90deg, #00cdec, #4aeeff); box-shadow: 0 0 6px rgba(0, 229, 255, 0.45); }
+
+        .tri-row .tr-share {
+            flex-shrink: 0;
+            width: 34px;
+            text-align: right;
+            font-size: 8.5px;
+            font-family: "DIN Alternate", sans-serif;
+            font-weight: bold;
+        }
+
+        .t-offline .tr-share { color: #ffcb7a; }
+        .t-online .tr-share { color: #4aeeff; }
+
+        .tri-foot {
+            flex-shrink: 0;
+            margin-top: 4px;
+            padding-top: 3px;
+            border-top: 1px dashed rgba(35, 120, 255, 0.14);
+            font-size: 8px;
+            color: #5a6f9e;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tri-foot b { font-weight: bold; }
+        .t-offline .tri-foot b { color: #ffb347; }
+        .t-online .tri-foot b { color: #00e5ff; }
+        .t-mix .tri-foot b { color: #b37fff; }
+
+        /* 品类占比：环形图 */
+        .tri-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        /* 环形图高度自适应：空间紧张时自动缩小，不挤掉图例与页脚 */
+        .tri-donut {
+            position: relative;
+            flex: 0 1 116px;
+            width: auto;
+            height: auto;
+            aspect-ratio: 1 / 1;
+            max-width: 116px;
+            max-height: 116px;
+            min-height: 0;
+            margin: 0 auto;
+            border-radius: 50%;
+            box-shadow: 0 0 26px rgba(35, 120, 255, 0.38);
+        }
+
+        .tri-donut .td-hole {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 58%;
+            height: 58%;
+            border-radius: 50%;
+            background: radial-gradient(circle, #13224a 0%, #0a142b 100%);
+            box-shadow: inset 0 0 12px rgba(35, 120, 255, 0.4);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .td-hole .tdh-val {
+            font-size: 11px;
+            font-weight: bold;
+            color: #fff;
+            font-family: "DIN Alternate", sans-serif;
+            line-height: 1;
+            letter-spacing: 0.3px;
+        }
+
+        .td-hole .tdh-label {
+            font-size: 7.5px;
+            color: #6db3ff;
+            margin-top: 2px;
+        }
+
+        .tri-legend {
+            width: 100%;
+            flex-shrink: 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px 14px;
+        }
+
+        .tri-legend .tlg-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 8px;
+            min-width: 0;
+        }
+
+        .tri-legend .tlg-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .tri-legend .tlg-name {
+            flex: 1;
+            color: #9fb2d8;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tri-legend .tlg-pct {
+            flex-shrink: 0;
+            color: #fff;
+            font-weight: bold;
+            font-family: "DIN Alternate", sans-serif;
+        }
+
+        @keyframes barGrow {
+            from { transform: scaleX(0); transform-origin: left center; }
+            to { transform: scaleX(1); transform-origin: left center; }
+        }
+
+        @media (max-width: 1600px) {
+            .tri-title { font-size: 9px; }
+            .tri-total b { font-size: 9px; }
+            .tri-row .tr-name { font-size: 8.5px; }
+            .tri-row .tr-val { font-size: 9px; }
+            .tri-donut { flex-basis: 96px; max-width: 96px; max-height: 96px; }
+            .td-hole .tdh-val { font-size: 10px; }
+            .tri-foot { font-size: 7.5px; }
+        }
+
+        /* 屏幕高度不足时（如 1440x900 / 1366x768）：排行行收成单行，避免撑破卡片 */
+        @media (max-height: 1040px) {
+            .tri-row { gap: 5px; }
+            .tri-row .tr-body { flex-direction: row; align-items: center; gap: 6px; }
+            .tri-row .tr-top { flex: 0 0 auto; justify-content: flex-start; gap: 5px; }
+            .tri-row .tr-name { max-width: 76px; }
+            .tri-row .tr-bot { flex: 1; min-width: 0; }
+            .tri-row .tr-share { width: 30px; font-size: 8px; }
+            .tri-row .tr-rank { width: 14px; height: 14px; font-size: 8px; }
+            .tri-panel { padding: 5px 7px 4px; }
+            .tri-head { padding-bottom: 3px; margin-bottom: 1px; }
+            .tri-foot { margin-top: 3px; padding-top: 2px; font-size: 7.5px; }
+            .tri-donut { flex-basis: 88px; max-width: 88px; max-height: 88px; }
+            .td-hole .tdh-val { font-size: 9px; }
+            .td-hole .tdh-label { font-size: 6.5px; }
+            .tri-legend { gap: 3px 10px; }
+            .tri-legend .tlg-item { font-size: 7.5px; }
+        }
+
+        /* 窄屏改为堆叠布局时，第四部分需要更高的卡片，避免三拼被压扁 */
+        @media (max-width: 1400px) {
+            .tech-body .row-bottom-1 { min-height: 470px; }
+        }
+
+        /* ===== 模块三：员工保险理赔情况 ===== */
+        .ins-content {
+            grid-template-columns: 1.1fr 1fr 1fr;
+            grid-template-rows: auto auto 1fr;
+            gap: 6px;
+        }
+
+        .ins-kpi-row {
+            grid-column: span 3;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+
+        .ins-age-chart {
+            display: flex;
+            flex-direction: column;
+            background: rgba(35, 120, 255, 0.03);
+            border: 1px solid rgba(35, 120, 255, 0.12);
+            border-radius: 6px;
+            padding: 6px 8px;
+            min-height: 0;
+        }
+
+        .age-bars {
+            flex: 1;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            gap: 4px;
+            padding: 3px 0 0;
+            min-height: 0;
+        }
+
+        .age-bar-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            height: 100%;
+            justify-content: flex-end;
+        }
+
+        .age-bar-item .age-bar {
+            width: 60%;
+            background: linear-gradient(180deg, #00e5ff, #2378ff);
+            border-radius: 3px 3px 0 0;
+            position: relative;
+            box-shadow: 0 0 10px rgba(35, 120, 255, 0.5);
+            min-height: 4px;
+        }
+
+        .age-bar-item .age-bar .ab-val {
+            position: absolute;
+            top: -11px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 8px;
+            color: #6db3ff;
+            white-space: nowrap;
+            font-weight: bold;
+        }
+
+        .age-bar-item .ab-label {
+            font-size: 8px;
+            color: #8ba3d4;
+            margin-top: 2px;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .age-bar-item .ab-avg {
+            font-size: 7px;
+            color: #00e5ff;
+            white-space: nowrap;
+        }
+
+        .ins-pie-panel { display: flex; flex-direction: column; min-height: 0; }
+
+        .ins-pie-body {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 0;
+        }
+
+        .ins-donut {
+            position: relative;
+            flex-shrink: 0;
+            width: 88px;
+            height: 88px;
+            border-radius: 50%;
+            box-shadow: 0 0 25px rgba(35, 120, 255, 0.4);
+        }
+
+        .ins-donut::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            background: #0d1b3e;
+        }
+
+        .ins-donut-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 2;
+        }
+
+        .ins-donut-label .idl-val {
+            font-size: 11px;
+            font-weight: bold;
+            color: #fff;
+            font-family: "DIN Alternate", sans-serif;
+        }
+
+        .ins-donut-label .idl-label { font-size: 7px; color: #8ba3d4; }
+
+        .ins-legend { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+
+        .ins-legend .il-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 6px;
+            background: rgba(35, 120, 255, 0.05);
+            border: 1px solid rgba(35, 120, 255, 0.12);
+            border-left: 3px solid;
+            border-radius: 4px;
+            font-size: 8.5px;
+        }
+
+        .ins-legend .il-item:nth-child(1) { border-left-color: #2378ff; }
+        .ins-legend .il-item:nth-child(2) { border-left-color: #00e5ff; }
+        .ins-legend .il-item:nth-child(3) { border-left-color: #ffb347; }
+        .ins-legend .il-item:nth-child(4) { border-left-color: #2ee6a8; }
+
+        .ins-legend .il-name {
+            flex: 1;
+            color: #c8d6f0;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .ins-legend .il-val {
+            font-family: "DIN Alternate", sans-serif;
+            font-size: 9px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        /* 在职/退休对比卡片 */
+        .emp-type-row {
+            grid-column: span 3;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .emp-type-card {
+            background: linear-gradient(135deg, rgba(35, 120, 255, 0.12), rgba(35, 120, 255, 0.02));
+            border: 1px solid rgba(35, 120, 255, 0.28);
+            border-radius: 6px;
+            padding: 6px 9px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .emp-type-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 3px; height: 100%;
+            background: #2378ff;
+            box-shadow: 0 0 8px #2378ff;
+        }
+
+        .emp-type-card.retired {
+            background: linear-gradient(135deg, rgba(255, 179, 71, 0.12), rgba(255, 179, 71, 0.02));
+            border-color: rgba(255, 179, 71, 0.28);
+        }
+
+        .emp-type-card.retired::before { background: #ffb347; box-shadow: 0 0 8px #ffb347; }
+
+        .emp-type-card .etc-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            padding-bottom: 3px;
+            border-bottom: 1px solid rgba(35, 120, 255, 0.15);
+        }
+
+        .emp-type-card.retired .etc-header { border-bottom-color: rgba(255, 179, 71, 0.15); }
+
+        .emp-type-card .etc-title {
+            font-size: 10px;
+            font-weight: bold;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            letter-spacing: 0.8px;
+        }
+
+        .emp-type-card .etc-title::before {
+            content: '';
+            width: 7px; height: 7px; border-radius: 50%;
+            background: #2378ff;
+        }
+
+        .emp-type-card.retired .etc-title::before { background: #ffb347; }
+
+        .emp-type-card .etc-sub { font-size: 8px; color: #8ba3d4; }
+
+        .emp-type-card .etc-body {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+
+        .emp-type-card .etc-item { display: flex; flex-direction: column; gap: 1px; }
+        .emp-type-card .etc-item .ei-label { font-size: 8px; color: #8ba3d4; white-space: nowrap; }
+        .emp-type-card .etc-item .ei-value {
+            font-size: 12px;
+            font-weight: bold;
+            color: #fff;
+            font-family: "DIN Alternate", sans-serif;
+            white-space: nowrap;
+        }
+        .emp-type-card .etc-item .ei-value.cyan { color: #00e5ff; }
+        .emp-type-card .etc-item .ei-value.orange { color: #ffb347; }
+        .emp-type-card .etc-item .ei-value.green { color: #2ee6a8; }
+
+        /* 审核结论 */
+        .conclusion-bar-wrap {
+            grid-column: span 3;
+            display: flex;
+            flex-direction: column;
+            background: rgba(35, 120, 255, 0.03);
+            border: 1px solid rgba(35, 120, 255, 0.12);
+            border-radius: 6px;
+            padding: 6px 8px;
+        }
+
+        .conclusion-bar {
+            display: flex;
+            height: 24px;
+            border-radius: 5px;
+            overflow: hidden;
+            border: 1px solid rgba(35, 120, 255, 0.25);
+            flex-shrink: 0;
+        }
+
+        .cb-seg {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 0;
+        }
+
+        .cb-seg.pay { background: linear-gradient(90deg, #2ee6a8, #7dffce); }
+        .cb-seg.reject { background: linear-gradient(90deg, #ff6b6b, #ffb347); }
+        .cb-seg.cancel { background: linear-gradient(90deg, #6db3ff, #b37fff); }
+
+        .cb-seg .cbs-label {
+            font-size: 9px;
+            font-weight: bold;
+            color: #fff;
+            padding: 0 4px;
+        }
+
+        .cb-seg .cbs-pct {
+            font-size: 10px;
+            font-weight: bold;
+            color: #fff;
+            font-family: "DIN Alternate", sans-serif;
+        }
+
+        /* ===== 模块四：运营服务情况 ===== */
+        .serv-content {
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto 1fr;
+            gap: 6px;
+        }
+
+        .serv-kpi-row {
+            grid-column: span 2;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+
+        .today-merged {
+            background: linear-gradient(135deg, rgba(35, 120, 255, 0.14), rgba(35, 120, 255, 0.03));
+            border: 1px solid rgba(35, 120, 255, 0.22);
+            border-radius: 6px;
+            padding: 6px 8px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .today-merged::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 3px;
+            height: 100%;
+            background: linear-gradient(180deg, #00e5ff, #2378ff, transparent);
+        }
+
+        .today-merged .tm-label { font-size: 9px; color: #8ba3d4; }
+
+        .today-merged .tm-value-row {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+            margin-top: 2px;
+        }
+
+        .today-merged .tm-report {
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffb347;
+            font-family: "DIN Alternate", sans-serif;
+        }
+
+        .today-merged .tm-sub {
+            font-size: 8px;
+            color: #5a6f9e;
+            margin-top: 1px;
+            display: flex;
+            gap: 6px;
+        }
+
+        .today-merged .tm-sub .tm-report-tag { color: #ffb347; }
+
+        .trend-chart-wrap {
+            grid-column: span 2;
+            position: relative;
+            background: rgba(35, 120, 255, 0.04);
+            border: 1px solid rgba(35, 120, 255, 0.15);
+            border-radius: 6px;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .trend-chart-wrap svg { width: 100%; height: 100%; display: block; }
+
+        .trend-chart-title {
+            position: absolute;
+            top: 5px;
+            left: 10px;
+            font-size: 9px;
+            color: #6db3ff;
+            z-index: 2;
+        }
+
+        .trend-chart-legend {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            display: flex;
+            gap: 8px;
+            font-size: 8px;
+            color: #8ba3d4;
+            z-index: 2;
+        }
+
+        .trend-chart-legend .lg-item { display: flex; align-items: center; gap: 3px; }
+        .trend-chart-legend .lg-line { width: 10px; height: 2px; border-radius: 1px; }
+
+        /* ===== 模块五：风险预警与员工关怀 ===== */
+        .risk-content {
+            grid-template-columns: 1fr;
+            grid-template-rows: auto 1fr;
+            gap: 6px;
+        }
+
+        /* 4个预警卡片 */
+        .risk-alert-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .risk-alert-card {
+            background: linear-gradient(135deg, rgba(255, 179, 71, 0.14), rgba(255, 179, 71, 0.03));
+            border: 1px solid rgba(255, 179, 71, 0.35);
+            border-radius: 6px;
+            padding: 6px 9px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .risk-alert-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 3px;
+            height: 100%;
+            background: linear-gradient(180deg, #ffb347, transparent);
+        }
+
+        .risk-alert-card.warn-orange { background: linear-gradient(135deg, rgba(255, 179, 71, 0.16), rgba(255, 179, 71, 0.03)); border-color: rgba(255, 179, 71, 0.35); }
+        .risk-alert-card.warn-orange::before { background: linear-gradient(180deg, #ffb347, transparent); }
+
+        .risk-alert-card.warn-red { background: linear-gradient(135deg, rgba(255, 107, 107, 0.16), rgba(255, 107, 107, 0.03)); border-color: rgba(255, 107, 107, 0.35); }
+        .risk-alert-card.warn-red::before { background: linear-gradient(180deg, #ff6b6b, transparent); }
+
+        .risk-alert-card.warn-green { background: linear-gradient(135deg, rgba(46, 230, 168, 0.16), rgba(46, 230, 168, 0.03)); border-color: rgba(46, 230, 168, 0.35); }
+        .risk-alert-card.warn-green::before { background: linear-gradient(180deg, #2ee6a8, transparent); }
+
+        .risk-alert-card .rac-label {
+            font-size: 9px;
+            color: #8ba3d4;
+            letter-spacing: 0.3px;
+        }
+
+        .risk-alert-card .rac-value {
+            font-size: 17px;
+            font-weight: bold;
+            font-family: "DIN Alternate", sans-serif;
+            margin-top: 1px;
+            letter-spacing: 0.5px;
+        }
+
+        .risk-alert-card.warn-orange .rac-value { color: #ffb347; }
+        .risk-alert-card.warn-red .rac-value { color: #ff6b6b; }
+        .risk-alert-card.warn-green .rac-value { color: #2ee6a8; }
+
+        .risk-alert-card .rac-sub {
+            font-size: 8px;
+            color: #5a6f9e;
+            margin-top: 1px;
+        }
+
+        /* 3个疾病TOP5卡片 */
+        .disease-top-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 5px;
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+        }
+
+        .disease-top-grid::-webkit-scrollbar { width: 3px; }
+        .disease-top-grid::-webkit-scrollbar-thumb { background: rgba(35, 120, 255, 0.4); border-radius: 2px; }
+
+        .disease-card {
+            background: rgba(35, 120, 255, 0.04);
+            border: 1px solid rgba(35, 120, 255, 0.15);
+            border-radius: 6px;
+            padding: 6px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .disease-card.c-active { border-color: rgba(255, 179, 71, 0.3); }
+        .disease-card.c-retired { border-color: rgba(0, 229, 255, 0.3); }
+        .disease-card.c-family { border-color: rgba(179, 127, 255, 0.3); }
+
+        .disease-card .dc-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 3px;
+            border-bottom: 1px solid rgba(35, 120, 255, 0.1);
+        }
+
+        .disease-card .dc-title {
+            font-size: 9.5px;
+            color: #fff;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .disease-card .dc-title::before {
+            content: '★';
+            font-size: 10px;
+        }
+
+        .disease-card.c-active .dc-title::before { color: #ffb347; }
+        .disease-card.c-retired .dc-title::before { color: #00e5ff; }
+        .disease-card.c-family .dc-title::before { color: #b37fff; }
+
+        .disease-card .dc-meta {
+            font-size: 8px;
+            color: #5a6f9e;
+        }
+
+        .disease-card .dc-meta b { color: #6db3ff; font-weight: bold; }
+
+        .disease-list {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .disease-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 8.5px;
+        }
+
+        .disease-item .di-rank {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            font-size: 8px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            border: 1px solid;
+        }
+
+        .disease-card.c-active .di-rank { color: #ffb347; border-color: rgba(255, 179, 71, 0.5); background: rgba(255, 179, 71, 0.1); }
+        .disease-card.c-retired .di-rank { color: #00e5ff; border-color: rgba(0, 229, 255, 0.5); background: rgba(0, 229, 255, 0.1); }
+        .disease-card.c-family .di-rank { color: #b37fff; border-color: rgba(179, 127, 255, 0.5); background: rgba(179, 127, 255, 0.1); }
+
+        .disease-item .di-name {
+            width: 90px;
+            color: #c8d6f0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-shrink: 0;
+        }
+
+        .disease-item .di-bar-bg {
+            flex: 1;
+            height: 4px;
+            background: rgba(35, 120, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            min-width: 20px;
+        }
+
+        .disease-item .di-bar {
+            height: 100%;
+            border-radius: 2px;
+        }
+
+        .disease-card.c-active .di-bar { background: linear-gradient(90deg, #ffb347, #ffcb7a); }
+        .disease-card.c-retired .di-bar { background: linear-gradient(90deg, #00e5ff, #4aeeff); }
+        .disease-card.c-family .di-bar { background: linear-gradient(90deg, #b37fff, #d0a8ff); }
+
+        .disease-item .di-count {
+            width: 42px;
+            text-align: right;
+            color: #fff;
+            font-family: "DIN Alternate", sans-serif;
+            font-weight: bold;
+            font-size: 9px;
+            flex-shrink: 0;
+        }
+
+        /* 底部 */
+        .tech-footer {
+            position: relative;
+            z-index: 5;
+            flex-shrink: 0;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 9px;
+            color: #3a4f7a;
+            margin-top: 5px;
+            border-top: 1px solid rgba(35, 120, 255, 0.12);
+            padding-top: 4px;
+        }
+
+        .tech-footer .update-time { color: #5a6f9e; }
+        .tech-footer .left-info { display: flex; align-items: center; gap: 5px; }
+
+        .tech-footer .live-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #2ee6a8;
+            box-shadow: 0 0 8px #2ee6a8;
+            animation: pulse 1.5s infinite;
+        }
+
+        @media (max-width:1600px) {
+            .module-title { font-size: 11px; }
+            .kpi-card .kc-value { font-size: 12px; }
+        }
+
+        @media (max-width:1400px) {
+            .tech-body {
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto;
+                overflow-y: auto;
+            }
+            .row-top-1, .row-top-2, .row-top-3 { grid-column: span 1; }
+            .row-bottom-1, .row-bottom-2 { grid-column: span 2; }
+            .module-block { min-height: 320px; }
+        }
+        /* ===== 模块五：风险预警与员工关怀（上2下3） ===== */
+.risk-content {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    gap: 6px;
+    min-height: 0;
+}
+
+/* 上：4个预警卡片，2列 × 2行 */
+.risk-alert-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 5px;
+    flex-shrink: 0;
+    height: 96px;
+}
+
+.risk-alert-card {
+    background: linear-gradient(135deg, rgba(255, 179, 71, 0.14), rgba(255, 179, 71, 0.03));
+    border: 1px solid rgba(255, 179, 71, 0.35);
+    border-radius: 5px;
+    padding: 4px 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.risk-alert-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+    background: linear-gradient(180deg, #ffb347, transparent);
+}
+
+.risk-alert-card.warn-orange { background: linear-gradient(135deg, rgba(255, 179, 71, 0.16), rgba(255, 179, 71, 0.03)); border-color: rgba(255, 179, 71, 0.35); }
+.risk-alert-card.warn-orange::before { background: linear-gradient(180deg, #ffb347, transparent); }
+
+.risk-alert-card.warn-red { background: linear-gradient(135deg, rgba(255, 107, 107, 0.16), rgba(255, 107, 107, 0.03)); border-color: rgba(255, 107, 107, 0.35); }
+.risk-alert-card.warn-red::before { background: linear-gradient(180deg, #ff6b6b, transparent); }
+
+.risk-alert-card.warn-green { background: linear-gradient(135deg, rgba(46, 230, 168, 0.16), rgba(46, 230, 168, 0.03)); border-color: rgba(46, 230, 168, 0.35); }
+.risk-alert-card.warn-green::before { background: linear-gradient(180deg, #2ee6a8, transparent); }
+
+.risk-alert-card .rac-label {
+    font-size: 9px;
+    color: #8ba3d4;
+    letter-spacing: 0.3px;
+}
+
+.risk-alert-card .rac-value {
+    font-size: 15px;
+    font-weight: bold;
+    font-family: "DIN Alternate", sans-serif;
+    margin-top: 1px;
+}
+
+.risk-alert-card.warn-orange .rac-value { color: #ffb347; }
+.risk-alert-card.warn-red .rac-value { color: #ff6b6b; }
+.risk-alert-card.warn-green .rac-value { color: #2ee6a8; }
+
+.risk-alert-card .rac-sub {
+    font-size: 7.5px;
+    color: #5a6f9e;
+    margin-top: 1px;
+}
+
+/* 下：3个疾病卡片横排 */
+.disease-top-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 5px;
+    flex: 1;
+    min-height: 0;
+}
+
+.disease-card {
+    background: rgba(35, 120, 255, 0.04);
+    border: 1px solid rgba(35, 120, 255, 0.15);
+    border-radius: 6px;
+    padding: 6px 7px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: relative;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.disease-card.c-active { border-color: rgba(255, 179, 71, 0.3); }
+.disease-card.c-retired { border-color: rgba(0, 229, 255, 0.3); }
+.disease-card.c-family { border-color: rgba(179, 127, 255, 0.3); }
+
+.disease-card .dc-header {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(35, 120, 255, 0.1);
+    flex-shrink: 0;
+}
+
+.disease-card .dc-title {
+    font-size: 10px;
+    color: #fff;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.disease-card .dc-title::before {
+    content: '★';
+    font-size: 10px;
+    flex-shrink: 0;
+}
+
+.disease-card.c-active .dc-title::before { color: #ffb347; }
+.disease-card.c-retired .dc-title::before { color: #00e5ff; }
+.disease-card.c-family .dc-title::before { color: #b37fff; }
+
+.disease-card .dc-meta {
+    font-size: 7.5px;
+    color: #5a6f9e;
+    line-height: 1.3;
+}
+
+.disease-card .dc-meta b { color: #6db3ff; font-weight: bold; }
+
+.disease-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    justify-content: space-around;
+    min-height: 0;
+}
+
+.disease-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 8.5px;
+}
+
+.disease-item .di-rank {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    font-size: 8px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 1px solid;
+}
+
+.disease-card.c-active .di-rank { color: #ffb347; border-color: rgba(255, 179, 71, 0.5); background: rgba(255, 179, 71, 0.1); }
+.disease-card.c-retired .di-rank { color: #00e5ff; border-color: rgba(0, 229, 255, 0.5); background: rgba(0, 229, 255, 0.1); }
+.disease-card.c-family .di-rank { color: #b37fff; border-color: rgba(179, 127, 255, 0.5); background: rgba(179, 127, 255, 0.1); }
+
+.disease-item .di-name {
+    width: 72px;
+    color: #c8d6f0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
+    font-size: 8.5px;
+}
+
+.disease-item .di-bar-bg {
+    flex: 1;
+    height: 4px;
+    background: rgba(35, 120, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    min-width: 14px;
+}
+
+.disease-item .di-bar {
+    height: 100%;
+    border-radius: 2px;
+}
+
+.disease-card.c-active .di-bar { background: linear-gradient(90deg, #ffb347, #ffcb7a); }
+.disease-card.c-retired .di-bar { background: linear-gradient(90deg, #00e5ff, #4aeeff); }
+.disease-card.c-family .di-bar { background: linear-gradient(90deg, #b37fff, #d0a8ff); }
+
+.disease-item .di-count {
+    width: 36px;
+    text-align: right;
+    color: #fff;
+    font-family: "DIN Alternate", sans-serif;
+    font-weight: bold;
+    font-size: 9px;
+    flex-shrink: 0;
+}
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div class="dash-title-bar">
+            <div class="title-deco-left"></div>
+            <div class="dash-title-main">
+                <div class="title-icon"></div>
+                <div class="title-text">企业客户服务中台 · 健康资金数据看板</div>
+                <div class="title-sub">HEALTH FUND DASHBOARD</div>
+            </div>
+            <div class="title-deco-right">
+                <div class="backend-btn" @click="goBackend">
+                    <span class="bb-icon">⚙</span>后台管理
+                </div>
+            </div>
+        </div>
+
+        <div class="tech-body">
+
+            <!-- ===== 模块一：健康委托资金预算与消耗（上排左） ===== -->
+            <div class="module-block row-top-1">
+                <div class="corner tl"></div>
+                <div class="corner tr"></div>
+                <div class="corner bl"></div>
+                <div class="corner br"></div>
+                <div class="module-header">
+                    <div class="module-title">
+                        <span class="mt-icon">💰</span>
+                        一、健康委托资金预算与消耗
+                    </div>
+                </div>
+                <div class="module-content fund-content">
+                    <div class="kpi-row-4">
+                        <div class="kpi-card">
+                            <div class="kc-label">总预算</div>
+                            <div class="kc-value cyan">¥{{ fundData.totalBudget }}</div>
+                            <div class="kc-sub">年度资金池</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kc-label">累计已使用</div>
+                            <div class="kc-value">¥{{ fundData.usedFund }}</div>
+                            <div class="kc-sub">直付 + 报销</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kc-label">当前余额</div>
+                            <div class="kc-value green">¥{{ fundData.balance }}</div>
+                            <div class="kc-sub">剩余可用</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kc-label">使用率</div>
+                            <div class="kc-value orange">{{ fundData.useRate }}% / {{ fundData.timeProgress }}%</div>
+                            <div class="kc-sub">{{ fundData.useRate > fundData.timeProgress ? '偏快' : '正常' }}</div>
+                        </div>
+                    </div>
+
+                    <div class="fund-chart-wrap">
+                        <div class="chart-title-mini">消耗速率 vs 时间进度</div>
+                        <div class="chart-legend-mini">
+                            <div class="lg-item"><span class="lg-line time-line"></span>时间</div>
+                            <div class="lg-item"><span class="lg-line fund-line"></span>消耗</div>
+                        </div>
+                        <svg viewBox="0 0 400 120" preserveAspectRatio="none">
+                            <line x1="0" y1="30" x2="400" y2="30" stroke="rgba(35,120,255,0.08)" stroke-width="1" />
+                            <line x1="0" y1="60" x2="400" y2="60" stroke="rgba(35,120,255,0.08)" stroke-width="1" />
+                            <line x1="0" y1="90" x2="400" y2="90" stroke="rgba(35,120,255,0.08)" stroke-width="1" />
+                            <line x1="0" y1="110" x2="400" y2="22" stroke="#6db3ff" stroke-width="1.5" stroke-dasharray="5,4" opacity="0.75" />
+                            <polyline points="0,112 40,104 80,96 120,86 160,74 200,62 240,50 280,40 320,30 360,22 400,16"
+                                fill="none" stroke="#00e5ff" stroke-width="2.5" style="filter:drop-shadow(0 0 6px #00e5ff);" />
+                            <polygon points="0,112 40,104 80,96 120,86 160,74 200,62 240,50 280,40 320,30 360,22 400,16 400,120 0,120"
+                                fill="url(#fundGradient)" opacity="0.4" />
+                            <defs>
+                                <linearGradient id="fundGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#00e5ff" stop-opacity="0.8" />
+                                    <stop offset="100%" stop-color="#00e5ff" stop-opacity="0" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+
+                    <div class="fund-right-col">
+                        <div class="predict-box">
+                            <div class="pb-label">资金耗尽预测</div>
+                            <div class="pb-value">{{ fundData.predictMonth }}</div>
+                            <div class="pb-sub">按当前速率</div>
+                        </div>
+                        <div class="quota-dist">
+                            <div class="quota-dist-title">个人额度使用分布</div>
+                            <div class="quota-item" v-for="(item, idx) in fundData.quotaDist" :key="idx">
+                                <div class="qi-label">{{ item.name }}</div>
+                                <div class="qi-bar-bg">
+                                    <div class="qi-bar" :style="{width: item.percent + '%'}"></div>
+                                </div>
+                                <div class="qi-val">{{ item.percent }}%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== 模块四：运营服务情况（上排中） ===== -->
+            <div class="module-block row-top-2">
+                <div class="corner tl"></div>
+                <div class="corner tr"></div>
+                <div class="corner bl"></div>
+                <div class="corner br"></div>
+                <div class="module-header">
+                    <div class="module-title">
+                        <span class="mt-icon">📊</span>
+                        二、运营服务情况
+                    </div>
+                    <div class="granularity-tabs">
+                        <button class="granularity-tab" :class="{active: servGranularity==='month'}" @click="servGranularity='month'">月</button>
+                        <button class="granularity-tab" :class="{active: servGranularity==='quarter'}" @click="servGranularity='quarter'">季</button>
+                        <button class="granularity-tab" :class="{active: servGranularity==='year'}" @click="servGranularity='year'">年</button>
+                    </div>
+                </div>
+                <div class="module-content serv-content">
+                    <div class="serv-kpi-row">
+                        <div class="today-merged">
+                            <div class="tm-label">{{ servDataKpi.periodLabel }} 报案</div>
+                            <div class="tm-value-row">
+                                <span class="tm-report">{{ servDataKpi.report }}</span>
+                            </div>
+                            <div class="tm-sub">
+                                <span class="tm-report-tag">报案</span>
+                            </div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kc-label">已完成案件数</div>
+                            <div class="kc-value green">{{ servDataKpi.doneTotal }}件</div>
+                            <div class="kc-sub">{{ servDataKpi.periodLabel }}累计结案</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kc-label">平均处理时效</div>
+                            <div class="kc-value cyan">{{ servDataKpi.avgHours }}小时</div>
+                            <div class="kc-sub">从报案到结案</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kc-label">案件趋势</div>
+                            <div class="kc-value orange">{{ servDataKpi.trendSign }}{{ servDataKpi.trendPercent }}%</div>
+                            <div class="kc-sub">{{ servDataKpi.trendLabel }}</div>
+                        </div>
+                    </div>
+
+                    <div class="trend-chart-wrap">
+                        <div class="trend-chart-title">{{ servTrendData.title }}</div>
+                        <div class="trend-chart-legend">
+                            <div class="lg-item"><span class="lg-line" style="background:#00e5ff;box-shadow:0 0 6px #00e5ff;"></span>新增</div>
+                            <div class="lg-item"><span class="lg-line" style="background:#2ee6a8;box-shadow:0 0 6px #2ee6a8;"></span>结案</div>
+                        </div>
+                        <svg viewBox="0 0 400 100" preserveAspectRatio="none">
+                            <line x1="0" y1="25" x2="400" y2="25" stroke="rgba(35,120,255,0.08)" stroke-width="1" />
+                            <line x1="0" y1="50" x2="400" y2="50" stroke="rgba(35,120,255,0.08)" stroke-width="1" />
+                            <line x1="0" y1="75" x2="400" y2="75" stroke="rgba(35,120,255,0.08)" stroke-width="1" />
+                            <polyline :points="servTrendData.newPoints" fill="none" stroke="#00e5ff" stroke-width="2" style="filter:drop-shadow(0 0 5px #00e5ff);" />
+                            <polyline :points="servTrendData.donePoints" fill="none" stroke="#2ee6a8" stroke-width="2" style="filter:drop-shadow(0 0 5px #2ee6a8);" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== 模块五：风险预警与员工关怀（上排右） ===== -->
+            <div class="module-block row-top-3">
+                <div class="corner tl"></div>
+                <div class="corner tr"></div>
+                <div class="corner bl"></div>
+                <div class="corner br"></div>
+                <div class="module-header">
+                    <div class="module-title">
+                        <span class="mt-icon">⚠️</span>
+                        三、风险预警与员工关怀
+                    </div>
+                    <div class="module-settings" title="异常预警设置" @click="openRiskSettings">⚙</div>
+                </div>
+                <div class="module-content risk-content">
+                    <!-- 4个预警卡片 -->
+                    <div class="risk-alert-grid">
+    <div class="risk-alert-card warn-orange">
+        <div class="rac-label">环比波动</div>
+        <div class="rac-value">+{{ riskData.momTrend }}%</div>
+        <div class="rac-sub">本月 vs 上月</div>
+    </div>
+    <div class="risk-alert-card warn-red">
+        <div class="rac-label">同比波动</div>
+        <div class="rac-value">+{{ riskData.yoyTrend }}%</div>
+        <div class="rac-sub">本月 vs 去年</div>
+    </div>
+    <div class="risk-alert-card warn-green">
+        <div class="rac-label">异常高频</div>
+        <div class="rac-value">{{ freqAlertCount }}人</div>
+        <div class="rac-sub">{{ riskSettings.freqDim }} · ≥{{ riskSettings.freqThreshold }}次</div>
+    </div>
+    <div class="risk-alert-card warn-red">
+        <div class="rac-label">异常赔付</div>
+        <div class="rac-value">¥{{ anomalyTotal }}</div>
+        <div class="rac-sub">购药 ¥{{ riskAnomaly.drug.toLocaleString() }} · 报销 ¥{{ riskAnomaly.reimb.toLocaleString() }}</div>
+    </div>
+</div>
+
+                    <!-- 3个疾病TOP5卡片 -->
+                    <div class="disease-top-grid">
+                        <div class="disease-card c-active" v-for="(group, gidx) in riskData.diseaseGroups" :key="gidx" :class="group.cardClass">
+                            <div class="dc-header">
+                                <div class="dc-title">{{ group.title }}</div>
+                                <div class="dc-meta">
+                                    累计 <b>{{ group.total }}</b>例 · 占该人群报案 <b>{{ group.rate }}%</b>
+                                </div>
+                            </div>
+                            <div class="disease-list">
+                                <div class="disease-item" v-for="(item, idx) in group.items" :key="idx">
+                                    <div class="di-rank">{{ idx+1 }}</div>
+                                    <div class="di-name">{{ item.name }}</div>
+                                    <div class="di-bar-bg">
+                                        <div class="di-bar" :style="{width: (item.count / group.items[0].count * 100) + '%'}"></div>
+                                    </div>
+                                    <div class="di-count">{{ item.count }}例</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== 模块二：健康委托资金运营情况（下排左） ===== -->
+            <div class="module-block row-bottom-1">
+                <div class="corner tl"></div>
+                <div class="corner tr"></div>
+                <div class="corner bl"></div>
+                <div class="corner br"></div>
+                <div class="module-header">
+                    <div class="module-title">
+                        <span class="mt-icon">💊</span>
+                        四、健康委托资金运营情况
+                    </div>
+                </div>
+                <div class="module-content op-content">
+                    <div class="op-kpi-row">
+                        <div class="kpi-card">
+                            <div class="kc-label">直付总额</div>
+                            <div class="kc-value cyan">¥{{ opData.directTotal }}</div>
+                            <div class="kc-sub">线上购药 + 线下购药</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kc-label">直付笔数</div>
+                            <div class="kc-value">{{ opData.directCount }}笔</div>
+                            <div class="kc-sub">直付订单</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kc-label">报销总额</div>
+                            <div class="kc-value orange">¥{{ opData.reimbTotal }}</div>
+                            <div class="kc-sub">门诊/住院/身故重疾/生育</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kc-label">报销笔数</div>
+                            <div class="kc-value green">{{ opData.reimbCount }}笔</div>
+                            <div class="kc-sub">报销单量</div>
+                        </div>
+                    </div>
+
+                    <!-- 直付：线上购药 / 线下购药 条形图 -->
+                    <div class="sub-panel direct-panel">
+                        <div class="category-title">
+                            直付
+                            <span class="category-total">¥{{ opData.directTotal }}</span>
+                        </div>
+                        <div class="stack-bar-wrap">
+                            <div class="stack-bar">
+                                <div class="stack-seg c1" :style="{width: opData.onlinePercent + '%'}">
+                                    <span class="ss-label">线上购药</span>
+                                    <span class="ss-pct">{{ opData.onlinePercent }}%</span>
+                                </div>
+                                <div class="stack-seg c2" :style="{width: opData.offlinePercent + '%'}">
+                                    <span class="ss-label">线下购药</span>
+                                    <span class="ss-pct">{{ opData.offlinePercent }}%</span>
+                                </div>
+                            </div>
+                            <div class="stack-detail-row-2">
+                                <div class="stack-detail c1">
+                                    <div class="sd-info">
+                                        <span class="sd-name">线上购药</span>
+                                        <span class="sd-amount">¥{{ opData.onlineAmount }}</span>
+                                    </div>
+                                    <span class="sd-pct">{{ opData.onlinePercent }}%</span>
+                                </div>
+                                <div class="stack-detail c2">
+                                    <div class="sd-info">
+                                        <span class="sd-name">线下购药</span>
+                                        <span class="sd-amount">¥{{ opData.offlineAmount }}</span>
+                                    </div>
+                                    <span class="sd-pct">{{ opData.offlinePercent }}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 报销 -->
+                    <div class="sub-panel">
+                        <div class="category-title">
+                            报销
+                            <span class="category-total">¥{{ opData.reimbTotal }}</span>
+                        </div>
+                        <div class="stack-bar-wrap">
+                            <div class="stack-bar">
+                                <div class="stack-seg c3" :style="{width: opData.outpatientPercent + '%'}">
+                                    <span class="ss-label">门诊</span>
+                                    <span class="ss-pct">{{ opData.outpatientPercent }}%</span>
+                                </div>
+                                <div class="stack-seg c4" :style="{width: opData.inpatientPercent + '%'}">
+                                    <span class="ss-label">住院</span>
+                                    <span class="ss-pct">{{ opData.inpatientPercent }}%</span>
+                                </div>
+                                <div class="stack-seg c5" v-if="opData.fatalIllnessPercent > 0" :style="{width: opData.fatalIllnessPercent + '%'}">
+                                    <span class="ss-label">身故重疾</span>
+                                    <span class="ss-pct">{{ opData.fatalIllnessPercent }}%</span>
+                                </div>
+                                <div class="stack-seg c2" v-if="opData.maternityPercent > 0" :style="{width: opData.maternityPercent + '%'}">
+                                    <span class="ss-label">生育</span>
+                                    <span class="ss-pct">{{ opData.maternityPercent }}%</span>
+                                </div>
+                            </div>
+                            <div class="stack-detail-row-4">
+                                <div class="stack-detail c3">
+                                    <div class="sd-info">
+                                        <span class="sd-name">门诊</span>
+                                        <span class="sd-amount">¥{{ opData.outpatientAmount }}</span>
+                                    </div>
+                                    <span class="sd-pct">{{ opData.outpatientPercent }}%</span>
+                                </div>
+                                <div class="stack-detail c4">
+                                    <div class="sd-info">
+                                        <span class="sd-name">住院</span>
+                                        <span class="sd-amount">¥{{ opData.inpatientAmount }}</span>
+                                    </div>
+                                    <span class="sd-pct">{{ opData.inpatientPercent }}%</span>
+                                </div>
+                                <div class="stack-detail c5">
+                                    <div class="sd-info">
+                                        <span class="sd-name">身故重疾</span>
+                                        <span class="sd-amount">¥{{ opData.fatalIllnessAmount }}</span>
+                                    </div>
+                                    <span class="sd-pct">{{ opData.fatalIllnessPercent }}%</span>
+                                </div>
+                                <div class="stack-detail c2">
+                                    <div class="sd-info">
+                                        <span class="sd-name">生育</span>
+                                        <span class="sd-amount">¥{{ opData.maternityAmount }}</span>
+                                    </div>
+                                    <span class="sd-pct">{{ opData.maternityPercent }}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 底部三拼：线下 TOP5 / 线上 TOP5 / 品类占比 -->
+                    <div class="op-triple">
+
+                        <!-- 1. 线下购药品类 TOP5 -->
+                        <div class="tri-panel t-offline">
+                            <div class="tri-head">
+                                <div class="tri-title">线下购药品类 TOP5</div>
+                                <div class="tri-total">¥<b>{{ opData.offlineAmount }}</b></div>
+                            </div>
+                            <div class="tri-list">
+                                <div class="tri-row" v-for="item in offlineRankRows" :key="item.name">
+                                    <span class="tr-rank">{{ item.rank }}</span>
+                                    <div class="tr-body">
+                                        <div class="tr-top">
+                                            <span class="tr-name" :title="item.name">{{ item.name }}</span>
+                                            <span class="tr-val">{{ item.amount.toLocaleString() }}</span>
+                                        </div>
+                                        <div class="tr-bot">
+                                            <span class="tr-bar-bg">
+                                                <i class="tr-bar" :style="{width: item.barPct + '%'}"></i>
+                                            </span>
+                                            <span class="tr-share">{{ item.share }}%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tri-foot">
+                                TOP5 合计 ¥{{ offlineTop5Sum }} · 占线下购药 <b>{{ offlineTop5Rate }}%</b>
+                            </div>
+                        </div>
+
+                        <!-- 2. 线上购药品类 TOP5 -->
+                        <div class="tri-panel t-online">
+                            <div class="tri-head">
+                                <div class="tri-title">线上购药品类 TOP5</div>
+                                <div class="tri-total">¥<b>{{ opData.onlineAmount }}</b></div>
+                            </div>
+                            <div class="tri-list">
+                                <div class="tri-row" v-for="item in onlineRankRows" :key="item.name">
+                                    <span class="tr-rank">{{ item.rank }}</span>
+                                    <div class="tr-body">
+                                        <div class="tr-top">
+                                            <span class="tr-name" :title="item.name">{{ item.name }}</span>
+                                            <span class="tr-val">{{ item.amount.toLocaleString() }}</span>
+                                        </div>
+                                        <div class="tr-bot">
+                                            <span class="tr-bar-bg">
+                                                <i class="tr-bar" :style="{width: item.barPct + '%'}"></i>
+                                            </span>
+                                            <span class="tr-share">{{ item.share }}%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tri-foot">
+                                TOP5 合计 ¥{{ onlineTop5Sum }} · 占线上购药 <b>{{ onlineTop5Rate }}%</b>
+                            </div>
+                        </div>
+
+                        <!-- 3. 处方药 / 慢病药 / 医疗器械 / 特药 / 其他 -->
+                        <div class="tri-panel t-mix">
+                            <div class="tri-head">
+                                <div class="tri-title">品类支出占比</div>
+                                <div class="tri-total">¥<b>{{ opData.directTotal }}</b></div>
+                            </div>
+                            <div class="tri-body">
+                                <div class="tri-donut" :style="{background: drugTypeDonut}">
+                                    <div class="td-hole">
+                                        <div class="tdh-val">¥{{ drugTypeTotalWan }}万</div>
+                                        <div class="tdh-label">直付合计</div>
+                                    </div>
+                                </div>
+                                <div class="tri-legend">
+                                    <div class="tlg-item" v-for="item in opData.drugTypeMix" :key="item.name">
+                                        <span class="tlg-dot" :style="{background: item.color, boxShadow: '0 0 6px ' + item.color}"></span>
+                                        <span class="tlg-name">{{ item.name }}</span>
+                                        <span class="tlg-pct">{{ item.percent }}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tri-foot">
+                                处方药 + 慢病药 <b>{{ prescriptionPlusChronic }}%</b>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== 模块三：员工保险理赔情况（下排右） ===== -->
+            <div class="module-block row-bottom-2">
+                <div class="corner tl"></div>
+                <div class="corner tr"></div>
+                <div class="corner bl"></div>
+                <div class="corner br"></div>
+                <div class="module-header">
+                    <div class="module-title">
+                        <span class="mt-icon">🛡️</span>
+                        五、员工保险理赔情况
+                    </div>
+                </div>
+                <div class="module-content ins-content">
+                    <div class="ins-kpi-row">
+                        <div class="kpi-card">
+                            <div class="kc-label">累计赔付金额</div>
+                            <div class="kc-value cyan">¥{{ insData.totalClaim }}</div>
+                            <div class="kc-sub">保险公司回传</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kc-label">赔付笔数 / 报案数</div>
+                            <div class="kc-value">{{ insData.claimCount }} / {{ insData.reportCount }}</div>
+                            <div class="kc-sub">赔付 / 报案</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kc-label">获赔率</div>
+                            <div class="kc-value green">{{ insData.claimRate }}%</div>
+                            <div class="kc-sub">赔付 / 报案</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kc-label">人均赔付</div>
+                            <div class="kc-value orange">¥{{ insData.avgClaim }}</div>
+                            <div class="kc-sub">总赔付 / 赔付人数</div>
+                        </div>
+                    </div>
+
+                    <div class="ins-age-chart">
+                        <div class="sub-panel-title">分年龄段赔付案件数与人均赔付</div>
+                        <div class="age-bars">
+                            <div class="age-bar-item" v-for="(item, idx) in insData.ageData" :key="idx">
+                                <div class="age-bar" :style="{height: item.barHeight + '%'}">
+                                    <span class="ab-val">{{ item.cases }}件</span>
+                                </div>
+                                <div class="ab-label">{{ item.name }}</div>
+                                <div class="ab-avg">¥{{ item.avg }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ins-pie-panel sub-panel">
+                        <div class="sub-panel-title">赔付金额分布</div>
+                        <div class="ins-pie-body">
+                            <div class="ins-donut" :style="{background: 'conic-gradient(#2378ff 0% 62%, #00e5ff 62% 82%, #ffb347 82% 92%, #2ee6a8 92% 100%)'}">
+                                <div class="ins-donut-label">
+                                    <div class="idl-val">{{ insData.claimCount }}</div>
+                                    <div class="idl-label">笔数</div>
+                                </div>
+                            </div>
+                            <div class="ins-legend">
+                                <div class="il-item" v-for="(item, idx) in insData.amountRange" :key="idx">
+                                    <span class="il-name">{{ item.name }}</span>
+                                    <span class="il-val">{{ item.count }}件</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ins-pie-panel sub-panel">
+                        <div class="sub-panel-title">赔付类型占比</div>
+                        <div class="ins-pie-body">
+                            <div class="ins-donut" :style="{background: 'conic-gradient(#2378ff 0% 42.5%, #00e5ff 42.5% 73.7%, #ffb347 73.7% 92.3%, #2ee6a8 92.3% 100%)'}">
+                                <div class="ins-donut-label">
+                                    <div class="idl-val">4</div>
+                                    <div class="idl-label">类型</div>
+                                </div>
+                            </div>
+                            <div class="ins-legend">
+                                <div class="il-item" v-for="(item, idx) in insData.claimType" :key="idx">
+                                    <span class="il-name">{{ item.name }}</span>
+                                    <span class="il-val">{{ item.percent }}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 在职 / 退休 对比卡片 -->
+                    <div class="emp-type-row">
+                        <div class="emp-type-card active">
+                            <div class="etc-header">
+                                <div class="etc-title">在职员工</div>
+                                <div class="etc-sub">在职人员理赔情况</div>
+                            </div>
+                            <div class="etc-body">
+                                <div class="etc-item">
+                                    <div class="ei-label">参保人数</div>
+                                    <div class="ei-value cyan">{{ insData.empType.active.count }}人</div>
+                                </div>
+                                <div class="etc-item">
+                                    <div class="ei-label">赔付金额</div>
+                                    <div class="ei-value">¥{{ insData.empType.active.amount }}</div>
+                                </div>
+                                <div class="etc-item">
+                                    <div class="ei-label">人均赔付</div>
+                                    <div class="ei-value green">¥{{ insData.empType.active.avg }}</div>
+                                </div>
+                                <div class="etc-item">
+                                    <div class="ei-label">赔付案件数</div>
+                                    <div class="ei-value orange">{{ insData.empType.active.cases }}件</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="emp-type-card retired">
+                            <div class="etc-header">
+                                <div class="etc-title">退休员工</div>
+                                <div class="etc-sub">退休人员理赔情况</div>
+                            </div>
+                            <div class="etc-body">
+                                <div class="etc-item">
+                                    <div class="ei-label">参保人数</div>
+                                    <div class="ei-value cyan">{{ insData.empType.retired.count }}人</div>
+                                </div>
+                                <div class="etc-item">
+                                    <div class="ei-label">赔付金额</div>
+                                    <div class="ei-value">¥{{ insData.empType.retired.amount }}</div>
+                                </div>
+                                <div class="etc-item">
+                                    <div class="ei-label">人均赔付</div>
+                                    <div class="ei-value green">¥{{ insData.empType.retired.avg }}</div>
+                                </div>
+                                <div class="etc-item">
+                                    <div class="ei-label">赔付案件数</div>
+                                    <div class="ei-value orange">{{ insData.empType.retired.cases }}件</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="conclusion-bar-wrap">
+                        <div class="sub-panel-title">审核结论分布</div>
+                        <div class="conclusion-bar">
+                            <div class="cb-seg pay" :style="{width: insData.conclusion[0].percent + '%'}">
+                                <span class="cbs-label">赔付</span>
+                                <span class="cbs-pct">{{ insData.conclusion[0].percent }}%</span>
+                            </div>
+                            <div class="cb-seg reject" :style="{width: insData.conclusion[1].percent + '%'}">
+                                <span class="cbs-label">拒赔</span>
+                                <span class="cbs-pct">{{ insData.conclusion[1].percent }}%</span>
+                            </div>
+                            <div class="cb-seg cancel" :style="{width: insData.conclusion[2].percent + '%'}">
+                                <span class="cbs-label">撤案</span>
+                                <span class="cbs-pct">{{ insData.conclusion[2].percent }}%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 异常预警设置弹窗 -->
+        <div class="settings-overlay" v-if="showRiskSettings" @click.self="showRiskSettings = false">
+            <div class="settings-card">
+                <h3>⚙️ 异常预警设置</h3>
+                <div class="set-field">
+                    <label>异常高频案件数维度</label>
+                    <select v-model="riskSettingsDraft.freqDim">
+                        <option>近30天</option>
+                        <option>近90天</option>
+                        <option>近12月</option>
+                    </select>
+                </div>
+                <div class="set-field">
+                    <label>异常高频阈值（次）</label>
+                    <input type="number" min="1" v-model.number="riskSettingsDraft.freqThreshold">
+                </div>
+                <div class="set-row">
+                    <div class="set-field">
+                        <label>异常赔付 · 购药金额（¥）</label>
+                        <input type="number" min="0" v-model.number="riskSettingsDraft.drugThreshold">
+                    </div>
+                    <div class="set-field">
+                        <label>异常赔付 · 报销金额（¥）</label>
+                        <input type="number" min="0" v-model.number="riskSettingsDraft.reimbThreshold">
+                    </div>
+                </div>
+                <div class="set-actions">
+                    <button class="set-btn ghost" @click="showRiskSettings = false">取消</button>
+                    <button class="set-btn primary" @click="saveRiskSettings">保存</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="tech-footer">
+            <div class="left-info">
+                <span class="live-dot"></span>
+                <span>数据实时同步 · 统计期间 2026-04-01 至 2026-04-17 · 更新时间 2026-04-17 18:00:00</span>
+            </div>
+            <span class="update-time">太保产险 · 企业信息服务管理平台</span>
+        </div>
+    </div>
+
+    <script>
+        new Vue({
+            el: "#app",
+            data() {
+                return {
+                    fundData: {
+                        totalBudget: "2,000,000.00",
+                        usedFund: "856,000.00",
+                        balance: "1,144,000.00",
+                        useRate: 42.80,
+                        timeProgress: 75.00,
+                        predictMonth: "第14个月",
+                        quotaDist: [
+                            { name: "0-20%", percent: 18 },
+                            { name: "20-40%", percent: 26 },
+                            { name: "40-60%", percent: 24 },
+                            { name: "60-80%", percent: 20 },
+                            { name: "80-100%", percent: 12 }
+                        ]
+                    },
+                    opData: {
+                        directTotal: "513,600.00",
+                        directCount: "1,720",
+                        onlineAmount: "291,040.00",
+                        onlinePercent: 56.68,
+                        offlineAmount: "222,560.00",
+                        offlinePercent: 43.32,
+                        reimbTotal: "342,400.00",
+                        reimbCount: "1,148",
+                        outpatientPercent: 35.00,
+                        inpatientPercent: 30.00,
+                        fatalIllnessPercent: 25.00,
+                        maternityPercent: 10.00,
+                        outpatientAmount: "119,840.00",
+                        inpatientAmount: "102,720.00",
+                        fatalIllnessAmount: "85,600.00",
+                        maternityAmount: "34,240.00",
+                        // 线下购药品类 TOP5（金额单位：元）
+                        offlineRank: [
+                            { name: "感冒发热用药", amount: 58860 },
+                            { name: "心脑血管用药", amount: 47320 },
+                            { name: "胃肠消化用药", amount: 39140 },
+                            { name: "维生素/滋补品", amount: 32760 },
+                            { name: "外用膏贴/皮肤", amount: 28480 }
+                        ],
+                        // 线上购药品类 TOP5（金额单位：元）
+                        onlineRank: [
+                            { name: "慢病续方用药", amount: 96240 },
+                            { name: "感冒发热用药", amount: 62180 },
+                            { name: "维生素/滋补品", amount: 48520 },
+                            { name: "皮肤科用药", amount: 39760 },
+                            { name: "眼科/器械耗材", amount: 25340 }
+                        ],
+                        // 购药品类支出结构（百分比合计 100）
+                        drugTypeMix: [
+                            { name: "处方药", percent: 38.6, color: "#2378ff" },
+                            { name: "慢病药", percent: 27.4, color: "#00e5ff" },
+                            { name: "医疗器械", percent: 15.2, color: "#ffb347" },
+                            { name: "特药", percent: 11.3, color: "#2ee6a8" },
+                            { name: "其他", percent: 7.5, color: "#b37fff" }
+                        ]
+                    },
+                    insData: {
+                        totalClaim: "430,500.00",
+                        claimCount: "268",
+                        reportCount: "290",
+                        claimRate: 92.50,
+                        avgClaim: "1,606.30",
+                        empType: {
+                            active: { count: 1086, amount: "326,800.00", avg: "301.00", cases: 198 },
+                            retired: { count: 164, amount: "103,700.00", avg: "632.00", cases: 70 }
+                        },
+                        ageData: [
+                            { name: "20-30岁", cases: 42, avg: "680", barHeight: 40 },
+                            { name: "31-40岁", cases: 68, avg: "1,250", barHeight: 65 },
+                            { name: "41-50岁", cases: 52, avg: "1,860", barHeight: 50 },
+                            { name: "51岁以上", cases: 24, avg: "3,420", barHeight: 25 }
+                        ],
+                        conclusion: [
+                            { name: "赔付", count: 248, percent: 85.5 },
+                            { name: "拒赔", count: 18, percent: 6.2 },
+                            { name: "撤案", count: 24, percent: 8.3 }
+                        ],
+                        amountRange: [
+                            { name: "0-500元", count: 86, percent: 62 },
+                            { name: "501-2000元", count: 52, percent: 38 },
+                            { name: "2001-10000元", count: 36, percent: 26 },
+                            { name: ">10000元", count: 12, percent: 9 }
+                        ],
+                        claimType: [
+                            { name: "门诊", percent: "35.00" },
+                            { name: "住院", percent: "30.00" },
+                            { name: "身故重疾", percent: "25.00" },
+                            { name: "生育", percent: "10.00" }
+                        ]
+                    },
+                    // 模块五：风险预警与员工关怀
+                    riskData: {
+                        momTrend: "12.30",
+                        yoyTrend: "8.60",
+                        diseaseGroups: [
+                            {
+                                title: "在职员工高发疾病 TOP 5",
+                                cardClass: "c-active",
+                                total: 529,
+                                rate: "71.4",
+                                items: [
+                                    { name: "高血压", count: 132 },
+                                    { name: "腰椎间盘突出", count: 98 },
+                                    { name: "血脂异常", count: 76 },
+                                    { name: "焦虑/失眠", count: 63 },
+                                    { name: "2型糖尿病", count: 51 }
+                                ]
+                            },
+                            {
+                                title: "男性员工高发疾病 TOP 5",
+                                cardClass: "c-retired",
+                                total: 416,
+                                rate: "83.2",
+                                items: [
+                                    { name: "心脑血管疾病", count: 127 },
+                                    { name: "2型糖尿病", count: 103 },
+                                    { name: "恶性肿瘤", count: 79 },
+                                    { name: "高血压", count: 57 },
+                                    { name: "慢性肾病", count: 50 }
+                                ]
+                            },
+                            {
+                                title: "女性员工高发疾病 TOP 5",
+                                cardClass: "c-family",
+                                total: 329,
+                                rate: "68.9",
+                                items: [
+                                    { name: "呼吸道感染", count: 118 },
+                                    { name: "高血压", count: 94 },
+                                    { name: "血脂异常", count: 71 },
+                                    { name: "颈椎病", count: 53 },
+                                    { name: "焦虑/失眠", count: 37 }
+                                ]
+                            }
+                        ]
+                    },
+                    showRiskSettings: false,
+                    riskSettingsDraft: null,
+                    // 异常预警设置（可配置）
+                    riskSettings: {
+                        freqDim: "近30天",
+                        freqThreshold: 3,
+                        drugThreshold: 5000,
+                        reimbThreshold: 10000
+                    },
+                    // 各维度异常高频人数（模拟数据）
+                    riskFreq: {
+                        "近30天": 6,
+                        "近90天": 14,
+                        "近12月": 28
+                    },
+                    // 异常赔付金额：购药 / 报销
+                    riskAnomaly: {
+                        drug: 12600,
+                        reimb: 23400
+                    },
+                    // 模块四：运营服务情况
+                    servGranularity: 'month',
+                    servData: {
+                        month: {
+                            periodLabel: "今日",
+                            report: 30,
+                            done: 24,
+                            doneTotal: 248,
+                            avgHours: 2.6,
+                            trendSign: "+",
+                            trendPercent: 8.6,
+                            trendLabel: "较上月",
+                            title: "当月案件趋势（按日）",
+                            newPoints: "0,70 13,68 26,72 40,65 53,62 66,66 80,58 93,56 106,60 120,52 133,48 146,52 160,45 173,42 186,46 200,40 213,38 226,42 240,36 253,32 266,36 280,30 293,28 306,32 320,26 333,24 346,28 360,22 373,20 386,24 400,18",
+                            donePoints: "0,76 13,74 26,78 40,72 53,68 66,72 80,64 93,62 106,66 120,58 133,54 146,58 160,52 173,48 186,52 200,46 213,44 226,48 240,42 253,38 266,42 280,36 293,34 306,38 320,32 333,30 346,34 360,28 373,26 386,30 400,24"
+                        },
+                        quarter: {
+                            periodLabel: "本季",
+                            report: 268,
+                            done: 246,
+                            doneTotal: 246,
+                            avgHours: 2.8,
+                            trendSign: "+",
+                            trendPercent: 5.2,
+                            trendLabel: "较上季",
+                            title: "本季案件趋势（按月）",
+                            newPoints: "0,60 100,45 200,35 300,28 400,20",
+                            donePoints: "0,68 100,52 200,42 300,34 400,26"
+                        },
+                        year: {
+                            periodLabel: "本年",
+                            report: 2860,
+                            done: 2680,
+                            doneTotal: 2680,
+                            avgHours: 3.1,
+                            trendSign: "-",
+                            trendPercent: 2.3,
+                            trendLabel: "较去年",
+                            title: "近五年案件趋势（按年）",
+                            newPoints: "0,65 80,58 160,52 240,45 320,38 400,32",
+                            donePoints: "0,72 80,66 160,58 240,52 320,45 400,38"
+                        }
+                    }
+                }
+            },
+
+            mounted() {
+                // ===== 用 assets/data.js 的真实口径覆盖演示数字，保证与后管端、报告页一致 =====
+                const D = window.CPIC_DATA;
+                if (!D || !D.dashboard) return;
+                const db = D.dashboard, R = D.report || {};
+                const m = c => Number(c || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                const BUDGET = 200000000;   // 200 万元（单位：分）
+
+                // --- 资金池 ---
+                this.fundData.usedFund = m(db.totalClaim);
+                this.fundData.balance = m(BUDGET - db.totalClaim);
+                this.fundData.useRate = +(db.totalClaim / BUDGET * 100).toFixed(2);
+                this.fundData.timeProgress = R.period ? R.period.runProgress : db.timeProgress;
+                const months = (R.period ? R.period.days : 112) / 30;
+                const monthly = db.totalClaim / months;
+                this.fundData.predictMonth = "第 " + Math.round(months + (BUDGET - db.totalClaim) / monthly) + " 个月";
+
+                // --- 运营服务（直付 / 报销）---
+                const op = this.opData;
+                op.directTotal = m(db.pharmacyPay);
+                op.directCount = String(db.payCount);
+                op.onlineAmount = m(db.onlinePay);
+                op.offlineAmount = m(db.offlinePay);
+                op.onlinePercent = +(db.onlinePay / db.pharmacyPay * 100).toFixed(2);
+                op.offlinePercent = +(100 - op.onlinePercent).toFixed(2);
+                op.reimbTotal = m(db.insuranceClaim);
+                op.reimbCount = String(db.paidCases);
+
+                // 报销结构按索赔性质重算
+                const nat = (R.natureRows || []);
+                const amtOf = n => { const f = nat.find(x => x.name === n); return f ? f.percent : 0; };
+                op.outpatientPercent = amtOf("门诊医疗");
+                op.inpatientPercent = amtOf("住院医疗");
+                op.fatalIllnessPercent = 0;
+                op.maternityPercent = 0;
+                op.outpatientAmount = m(db.insuranceClaim * op.outpatientPercent / 100);
+                op.inpatientAmount = m(db.insuranceClaim - db.insuranceClaim * op.outpatientPercent / 100);
+                op.fatalIllnessAmount = "0.00";
+                op.maternityAmount = "0.00";
+
+                // 品类 TOP5：按渠道金额重新配比（Top5 约占 68%）
+                const rescale = (list, total, share) => {
+                    const base = list.reduce((s, i) => s + i.amount, 0);
+                    return list.map((i, idx) => ({
+                        name: i.name,
+                        amount: Math.round(total * share * (i.amount / base))
+                    }));
+                };
+                op.offlineRank = rescale(op.offlineRank, db.offlinePay, 0.68);
+                op.onlineRank = rescale(op.onlineRank, db.onlinePay, 0.72);
+
+                // --- 理赔模块 ---
+                const ins = this.insData;
+                ins.totalClaim = m(db.insuranceClaim);
+                ins.claimCount = String(db.paidCases);
+                ins.reportCount = String(db.claimCount);
+                ins.claimRate = db.claimRate;
+                ins.avgClaim = m(Math.round(db.insuranceClaim / db.paidCases));
+
+                // 年龄段
+                const ages = (R.ageRows || []);
+                const maxAge = Math.max.apply(null, ages.map(a => a.cases).concat([1]));
+                ins.ageData = ages.map(a => ({
+                    name: a.name, cases: a.cases, avg: m(a.avg),
+                    barHeight: Math.max(18, Math.round(a.cases / maxAge * 92))
+                }));
+
+                // 金额区间
+                ins.amountRange = (R.rangeRows || []).filter(r => r.count > 0).map(r => ({
+                    name: r.range.replace(" 元", "").replace("（撤案/不予受理）", ""),
+                    count: r.count,
+                    percent: r.percent
+                }));
+
+                // 结论（三色条）
+                const cr = (R.conclusionRows || []);
+                const pick = n => { const f = cr.find(x => x.name === n); return f ? f.percent : 0; };
+                ins.conclusion = [
+                    { name: "赔付", count: (cr.find(x => x.name === "正常赔付") || {}).count || 0, percent: pick("正常赔付") },
+                    { name: "通融", count: (cr.find(x => x.name === "通融赔付") || {}).count || 0, percent: pick("通融赔付") },
+                    { name: "撤案", count: (cr.find(x => x.name === "撤销报案") || {}).count || 0, percent: pick("撤销报案") }
+                ];
+
+                // 索赔性质
+                ins.claimType = nat.map(r => ({ name: r.name, percent: r.percent }));
+
+                // 人员类型拆分
+                const activeRatio = 0.84;
+                const activeCount = Math.round(db.insuredCount * 0.905);
+                const retiredCount = db.insuredCount - activeCount;
+                ins.empType.active = {
+                    count: activeCount,
+                    amount: m(Math.round(db.insuranceClaim * activeRatio)),
+                    avg: m(Math.round(db.insuranceClaim * activeRatio / activeCount)),
+                    cases: Math.round(db.paidCases * 0.84)
+                };
+                ins.empType.retired = {
+                    count: retiredCount,
+                    amount: m(db.insuranceClaim - Math.round(db.insuranceClaim * activeRatio)),
+                    avg: m(Math.round((db.insuranceClaim - db.insuranceClaim * activeRatio) / retiredCount)),
+                    cases: db.paidCases - Math.round(db.paidCases * 0.84)
+                };
+
+                // 服务时效
+                const sd = this.servData.month;
+                sd.report = db.claimCount;
+                sd.done = db.paidCases;
+                sd.doneTotal = db.paidCases;
+            },
+            computed: {
+                servDataKpi() { return this.servData[this.servGranularity]; },
+                servTrendData() { return this.servData[this.servGranularity]; },
+                freqAlertCount() { return this.riskFreq[this.riskSettings.freqDim]; },
+                anomalyTotal() {
+                    return (this.riskAnomaly.drug + this.riskAnomaly.reimb).toLocaleString("en-US");
+                },
+                // ---- 第四部分 · 底部三拼 ----
+                // 排行行：补充名次、占该渠道比重、条形相对宽度
+                offlineRankRows() {
+                    return this.buildRankRows(this.opData.offlineRank, this.opData.offlineAmount);
+                },
+                onlineRankRows() {
+                    return this.buildRankRows(this.opData.onlineRank, this.opData.onlineAmount);
+                },
+                offlineTop5Sum() {
+                    return this.sumOf(this.opData.offlineRank).toLocaleString();
+                },
+                onlineTop5Sum() {
+                    return this.sumOf(this.opData.onlineRank).toLocaleString();
+                },
+                offlineTop5Rate() {
+                    return (this.sumOf(this.opData.offlineRank) / this.num(this.opData.offlineAmount) * 100).toFixed(1);
+                },
+                onlineTop5Rate() {
+                    return (this.sumOf(this.opData.onlineRank) / this.num(this.opData.onlineAmount) * 100).toFixed(1);
+                },
+                // 环形图：按占比动态生成 conic-gradient
+                drugTypeDonut() {
+                    let acc = 0;
+                    const stops = this.opData.drugTypeMix.map(item => {
+                        const from = acc;
+                        acc = +(acc + item.percent).toFixed(2);
+                        return `${item.color} ${from}% ${acc}%`;
+                    });
+                    return `conic-gradient(${stops.join(", ")})`;
+                },
+                // 环形图中心：直付总额（万元）
+                drugTypeTotalWan() {
+                    return (this.num(this.opData.directTotal) / 10000).toFixed(1);
+                },
+                prescriptionPlusChronic() {
+                    const map = {};
+                    this.opData.drugTypeMix.forEach(i => { map[i.name] = i.percent; });
+                    return ((map["处方药"] || 0) + (map["慢病药"] || 0)).toFixed(1);
+                }
+            },
+            methods: {
+                num(val) {
+                    return Number(String(val).replace(/,/g, "")) || 0;
+                },
+                sumOf(list) {
+                    return list.reduce((s, i) => s + i.amount, 0);
+                },
+                // 生成排行行：名次 / 占比 / 条形宽度（相对第一名）
+                buildRankRows(list, total) {
+                    const sum = this.num(total);
+                    const max = list.reduce((m, i) => Math.max(m, i.amount), 0) || 1;
+                    return list.map((item, idx) => ({
+                        rank: idx + 1,
+                        name: item.name,
+                        amount: item.amount,
+                        share: (item.amount / sum * 100).toFixed(1),
+                        barPct: +(item.amount / max * 100).toFixed(2)
+                    }));
+                },
+                openRiskSettings() {
+                    this.riskSettingsDraft = JSON.parse(JSON.stringify(this.riskSettings));
+                    this.showRiskSettings = true;
+                },
+                saveRiskSettings() {
+                    this.riskSettings = JSON.parse(JSON.stringify(this.riskSettingsDraft));
+                    this.showRiskSettings = false;
+                },
+                goBackend() {
+                    window.location.href = "manage.html";
+                }
+            }
+        })
+    </script>
+</body>
+
+</html>
