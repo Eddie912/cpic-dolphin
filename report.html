@@ -588,12 +588,21 @@ new Vue({
         rangeText() {
             const list = (R.rangeRows || []).filter(r => r.amount > 0);
             if (!list.length) return "";
-            const top = list.slice().sort((a, b) => b.amount - a.amount)[0];
-            const big = list.filter(r => r.range.indexOf("5,001") > -1 || r.range.indexOf("8,000 以上") > -1);
-            const bigAvg = big.length ? Math.round(big.reduce((s, r) => s + r.amount, 0) / big.reduce((s, r) => s + r.count, 0)) : 0;
-            return `赔付金额主要集中于 <em>${top.range}</em> 区间，共 ${top.count} 件，` +
-                `贡献赔付金额 ${this.wan(top.amount)} 万元，占全部赔付的 <em>${top.percent}%</em>。` +
-                `5,000 元以上案件合计 ${big.reduce((s, r) => s + r.count, 0)} 件，案均 ${this.money(bigAvg)} 元，多为住院及大额检查类支出。`;
+            let topIdx = 0;
+            list.forEach((r, i) => { if (r.count > list[topIdx].count) topIdx = i; });
+            const top = list[topIdx];
+            const higher = list.slice(topIdx + 1);
+            let s = `赔付金额主要集中于 <em>${top.range}</em> 区间，共 ${top.count} 件，` +
+                `贡献赔付金额 ${this.wan(top.amount)} 万元，占全部赔付的 <em>${top.percent}%</em>。`;
+            if (higher.length) {
+                const hc = higher.reduce((a, r) => a + r.count, 0);
+                const ha = higher.reduce((a, r) => a + r.amount, 0);
+                s += `更高金额区间（${higher.map(r => r.range).join("、")}）合计 ${hc} 件，` +
+                    `案均 ${this.money(Math.round(ha / hc))} 元，多为住院及大额检查类支出。`;
+            } else {
+                s += `本期未见更高金额区间的赔付案件，赔付结构整体可控。`;
+            }
+            return s;
         },
         progressText() {
             const p = R.progress || {};
