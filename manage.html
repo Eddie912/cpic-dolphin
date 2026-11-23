@@ -1085,34 +1085,14 @@ new Vue({
         var p = (RP.period || {});
         this.reportList = [
             {
-                reportName: "2026年04月上半月理赔分析报告",
-                reportType: "月度报告",
+                reportName: "2026年第一季度理赔分析报告",
+                reportType: "季度报告",
                 periodDesc: (p.start || "") + " ~ " + (p.end || ""),
-                uploadTime: "2026-04-18 09:12:10",
+                uploadTime: "2026-04-08 10:26:35",
                 uploadUser: "太保科技",
                 fileSuffix: ".pdf",
                 online: true,
-                fileUrl: "assets/reports/claims-report-2026-04.pdf"
-            },
-            {
-                reportName: "2026年第一季度理赔分析报告",
-                reportType: "季度报告",
-                periodDesc: "2026-01-01 ~ 2026-03-31",
-                uploadTime: "2026-04-08 16:40:22",
-                uploadUser: "太保科技",
-                fileSuffix: ".pdf",
-                online: false,
-                fileUrl: "assets/reports/claims-report-2026-04.pdf"
-            },
-            {
-                reportName: "2025年度理赔分析报告",
-                reportType: "年度报告",
-                periodDesc: "2025-01-01 ~ 2025-12-31",
-                uploadTime: "2026-01-12 16:45:33",
-                uploadUser: "太保科技",
-                fileSuffix: ".pdf",
-                online: false,
-                fileUrl: "assets/reports/claims-report-2026-04.pdf"
+                fileUrl: "assets/reports/claims-report-2026-q1.pdf"
             }
         ];
         this.reportFilterList = this.reportList.slice();
@@ -1376,7 +1356,7 @@ new Vue({
                     uploadUser: "当前登录用户",
                     fileSuffix: suffix,
                     online: false,
-                    fileUrl: "assets/reports/claims-report-2026-04.pdf"
+                    fileUrl: "assets/reports/claims-report-2026-q1.pdf"
                 };
                 self.reportList.unshift(item);
                 self.reportFilterList = self.reportList.slice();
